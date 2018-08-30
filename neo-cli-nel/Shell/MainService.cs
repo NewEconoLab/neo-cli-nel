@@ -1107,10 +1107,10 @@ namespace Neo.Shell
         {
             JObject json = new JObject();
             json["txid"] = e.Transaction.Hash.ToString();
-            json["vmstate"] = e.VMState;
-            json["gas_consumed"] = e.GasConsumed.ToString();
-            json["stack"] = e.Stack.Select(p => p.ToParameter().ToJson()).ToArray();
-            json["notifications"] = e.Notifications.Select(p =>
+            json["vmstate"] = e.ExecutionResults[0].VMState;
+            json["gas_consumed"] = e.ExecutionResults[0].GasConsumed.ToString();
+            json["stack"] = e.ExecutionResults[0].Stack.Select(p => p.ToParameter().ToJson()).ToArray();
+            json["notifications"] = e.ExecutionResults[0].Notifications.Select(p =>
             {
                 JObject notification = new JObject();
                 notification["contract"] = p.ScriptHash.ToString();

@@ -621,7 +621,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                             if (bLog)
                                 engine.BeginDebug();
 
-                            engine.LoadScript(tx_invocation.Script, false);
+                            engine.LoadScript(tx_invocation.Script);
                             if (engine.Execute())
                             {
                                 service.Commit();
@@ -632,7 +632,7 @@ namespace Neo.Implementations.Blockchains.LevelDB
                                 ScriptHash = tx_invocation.Script.ToScriptHash(),
                                 VMState = engine.State,
                                 GasConsumed = engine.GasConsumed,
-                                Stack = engine.EvaluationStack.ToArray(),
+                                Stack = engine.ResultStack.ToArray(),
                                 Notifications = service.Notifications.ToArray()
                             });
                             //write fulllog
