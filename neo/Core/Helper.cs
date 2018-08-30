@@ -89,8 +89,8 @@ namespace Neo.Core
                     {
                         engine.BeginDebug();
                     }
-                    engine.LoadScript(verification, false);
-                    engine.LoadScript(verifiable.Scripts[i].InvocationScript, true);
+                    engine.LoadScript(verification);
+                    engine.LoadScript(verifiable.Scripts[i].InvocationScript);
                     if (!engine.Execute()) return false;
                     if (bLog)
                     {
