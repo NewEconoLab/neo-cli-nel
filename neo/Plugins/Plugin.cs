@@ -35,9 +35,5 @@ namespace Neo.Plugins
                 }
             }
         }
-
-        public static void LoadPlugins()
-        {
-        }
     }
 }

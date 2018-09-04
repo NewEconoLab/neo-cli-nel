@@ -98,7 +98,7 @@ namespace Neo.Core
                         if (engine.FullLog != null)
                             engine.FullLog.Save(filename);
                     }
-                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
+                    if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
                 }
             }
             return true;
