@@ -229,15 +229,29 @@ namespace Neo.VM
                                 script_hash = EvaluationStack.Pop().GetByteArray();
                             }
 
-                            byte[] script = table.GetScript(script_hash);
-                            if (script == null)
+                            //加入appcall扩展
+                            var sex = table.GetScript(script_hash);
+                            if (sex.isNative)
                             {
-                                State |= VMState.FAULT;
-                                return;
+                                bool bsuc = sex.RunNative(this, context);
+                                if (!bsuc)
+                                {
+                                    State |= VMState.FAULT;
+                                    return;
+                                }
                             }
-                            if (opcode == OpCode.TAILCALL)
-                                InvocationStack.Pop().Dispose();
-                            LoadScript(script);
+                            else
+                            {
+                                byte[] script = sex.script;
+                                if (script == null)
+                                {
+                                    State |= VMState.FAULT;
+                                    return;
+                                }
+                                if (opcode == OpCode.TAILCALL)
+                                    InvocationStack.Pop().Dispose();
+                                LoadScript(script);
+                            }
                         }
                         break;
                     case OpCode.SYSCALL:

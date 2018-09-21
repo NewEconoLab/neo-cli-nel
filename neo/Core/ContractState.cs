@@ -17,7 +17,8 @@ namespace Neo.Core
         public string Author;
         public string Email;
         public string Description;
-
+        //add a tag for nativeContract;
+        public string NativeTag;
 
         public bool HasStorage => ContractProperties.HasFlag(ContractPropertyState.HasStorage);
         public bool HasDynamicInvoke => ContractProperties.HasFlag(ContractPropertyState.HasDynamicInvoke);
@@ -50,7 +51,10 @@ namespace Neo.Core
                 CodeVersion = CodeVersion,
                 Author = Author,
                 Email = Email,
-                Description = Description
+                Description = Description,
+                NativeTag = NativeTag
+
+
             };
         }
 
@@ -66,6 +70,7 @@ namespace Neo.Core
             Author = reader.ReadVarString();
             Email = reader.ReadVarString();
             Description = reader.ReadVarString();
+            NativeTag = reader.ReadVarString();
         }
 
         void ICloneable<ContractState>.FromReplica(ContractState replica)
@@ -79,6 +84,7 @@ namespace Neo.Core
             Author = replica.Author;
             Email = replica.Email;
             Description = replica.Description;
+            NativeTag = replica.NativeTag;
         }
 
         public override void Serialize(BinaryWriter writer)
@@ -93,6 +99,7 @@ namespace Neo.Core
             writer.WriteVarString(Author);
             writer.WriteVarString(Email);
             writer.WriteVarString(Description);
+            writer.WriteVarString(NativeTag);
         }
 
         public override JObject ToJson()
@@ -110,6 +117,7 @@ namespace Neo.Core
             json["properties"] = new JObject();
             json["properties"]["storage"] = HasStorage;
             json["properties"]["dynamic_invoke"] = HasDynamicInvoke;
+            json["nativetag"] = NativeTag;
             return json;
         }
     }

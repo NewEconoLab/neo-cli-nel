@@ -173,7 +173,8 @@ namespace Neo.SmartContract
                     CodeVersion = version,
                     Author = author,
                     Email = email,
-                    Description = description
+                    Description = description,
+                    NativeTag = ""//这表示是普通合约
                 };
                 contracts.Add(hash, contract);
                 contracts_created.Add(hash, new UInt160(engine.CurrentContext.ScriptHash));
@@ -181,7 +182,52 @@ namespace Neo.SmartContract
             engine.EvaluationStack.Push(StackItem.FromInterface(contract));
             return true;
         }
+        private bool Contract_Create_Native(ExecutionEngine engine)
+        {
+            byte[] script = engine.EvaluationStack.Pop().GetByteArray();
+            if (script.Length > 1024 * 1024) return false;
+            ContractParameterType[] parameter_list = engine.EvaluationStack.Pop().GetByteArray().Select(p => (ContractParameterType)p).ToArray();
+            if (parameter_list.Length > 252) return false;
+            ContractParameterType return_type = (ContractParameterType)(byte)engine.EvaluationStack.Pop().GetBigInteger();
+            ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.EvaluationStack.Pop().GetBigInteger();
+            if (engine.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
+            string name = Encoding.UTF8.GetString(engine.EvaluationStack.Pop().GetByteArray());
+            if (engine.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
+            string version = Encoding.UTF8.GetString(engine.EvaluationStack.Pop().GetByteArray());
+            if (engine.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
+            string author = Encoding.UTF8.GetString(engine.EvaluationStack.Pop().GetByteArray());
+            if (engine.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
+            string email = Encoding.UTF8.GetString(engine.EvaluationStack.Pop().GetByteArray());
+            if (engine.EvaluationStack.Peek().GetByteArray().Length > 65536) return false;
+            string description = Encoding.UTF8.GetString(engine.EvaluationStack.Pop().GetByteArray());
 
+            //增加nativeTag
+            if (engine.EvaluationStack.Peek().GetByteArray().Length > 256) return false;
+            string nativeTag = Encoding.UTF8.GetString(engine.EvaluationStack.Pop().GetByteArray());
+
+            UInt160 hash = script.ToScriptHash();
+            ContractState contract = contracts.TryGet(hash);
+            if (contract == null)
+            {
+                contract = new ContractState
+                {
+                    Script = script,
+                    ParameterList = parameter_list,
+                    ReturnType = return_type,
+                    ContractProperties = contract_properties,
+                    Name = name,
+                    CodeVersion = version,
+                    Author = author,
+                    Email = email,
+                    Description = description,
+                    NativeTag = nativeTag
+                };
+                contracts.Add(hash, contract);
+                contracts_created.Add(hash, new UInt160(engine.CurrentContext.ScriptHash));
+            }
+            engine.EvaluationStack.Push(StackItem.FromInterface(contract));
+            return true;
+        }
         private bool Contract_Migrate(ExecutionEngine engine)
         {
             byte[] script = engine.EvaluationStack.Pop().GetByteArray();

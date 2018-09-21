@@ -597,7 +597,8 @@ namespace Neo.Implementations.Blockchains.LevelDB
                             CodeVersion = tx_publish.CodeVersion,
                             Author = tx_publish.Author,
                             Email = tx_publish.Email,
-                            Description = tx_publish.Description
+                            Description = tx_publish.Description,
+                            NativeTag = ""//添加nativetag
                         });
                         break;
 #pragma warning restore CS0612
@@ -607,14 +608,14 @@ namespace Neo.Implementations.Blockchains.LevelDB
                             ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, script_table, service, tx_invocation.Gas);
                             ///add log
                             bool bLog = false;
-                            if(!fullog_localonly)
+                            if (!fullog_localonly)
                             {
                                 var split = block.Header.Index % this.fulllog_splitcount;
                                 if (SmartContract.Debug.FullLog.Path != null && split == this.fulllog_splitindex)// && this.FullLogSkip.Contains(itx.Hash.ToString()) == false)
                                     bLog = true;
                             }
-                           
-                            if(bLog==false)
+
+                            if (bLog == false)
                             {
                                 bLog = SmartContract.Debug.FullLog.TestNeedLog(tx_invocation.Hash);
                             }

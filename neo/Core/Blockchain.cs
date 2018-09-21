@@ -458,10 +458,63 @@ namespace Neo.Core
         /// <returns>返回下一个区块的散列值</returns>
         public abstract UInt256 GetNextBlockHash(UInt256 hash);
 
-        byte[] IScriptTable.GetScript(byte[] script_hash)
+        //增加for nativecontract
+        public interface INativeContract
         {
-            return GetContract(new UInt160(script_hash)).Script;
+            string Tag
+            {
+                get;
+            }
+            bool Run(VM.ExecutionEngine engine, VM.ExecutionContext context);
         }
+        public class ScriptEX : IScriptEX
+        {
+            public ScriptEX(ContractState state)
+            {
+                this.script = state.Script;
+                this.nativeTag = state.NativeTag;
+                this.isNative = !string.IsNullOrEmpty(nativeTag);
+            }
+            public byte[] script
+            {
+                get;
+                private set;
+            }
+
+            public bool isNative
+            {
+                get;
+                private set;
+            }
+
+            public string nativeTag
+            {
+                get;
+                private set;
+            }
+            static System.Collections.Concurrent.ConcurrentDictionary <string, INativeContract> CustomContract = new System.Collections.Concurrent.ConcurrentDictionary<string, INativeContract>();
+            public static void RegNativeContract(INativeContract nc)
+            {
+                CustomContract[nc.Tag] = nc;
+            }
+            public bool RunNative(ExecutionEngine engine, VM.ExecutionContext context)
+            {
+                if (this.isNative == false)
+                    throw new Exception("only for native contract");
+
+                var nc = CustomContract[this.nativeTag];
+                return nc.Run(engine,context);
+            }
+        }
+        IScriptEX IScriptTable.GetScript(byte[] script_hash)
+        {
+            var scriptstate = GetContract(new UInt160(script_hash));
+            return new ScriptEX(scriptstate);
+        }
+        //byte[] IScriptTable.GetScript(byte[] script_hash)
+        //{
+        //    return GetContract(new UInt160(script_hash)).Script;
+        //}
 
         public abstract StorageItem GetStorageItem(StorageKey key);
 
