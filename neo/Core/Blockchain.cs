@@ -149,8 +149,88 @@ namespace Neo.Core
         static Blockchain()
         {
             GenesisBlock.RebuildMerkleRoot();
-        }
 
+            //native contract 例子
+            Blockchain.ScriptEX.RegNativeContract(new SampleNep5());
+        }
+        public class SampleNep5 : Blockchain.INativeContract
+        {
+            public string Tag
+            {
+                get
+                {
+                    return "Nep5";
+                }
+            }
+
+            public bool Run(UInt160 scripthash, ExecutionEngine engine, VM.ExecutionContext context)
+            {
+                var name = engine.EvaluationStack.Pop().GetString();
+                var _params = engine.EvaluationStack.Pop() as Neo.VM.Types.Array;
+                if (name == "name")
+                {
+                    StackItem returnvalue = System.Text.Encoding.UTF8.GetBytes("native nep5");
+                    engine.EvaluationStack.Push(returnvalue);
+                    return true;
+                }
+                if (name == "transfer")
+                {
+                    var from = _params[0].GetByteArray();
+                    var to = _params[1].GetByteArray();
+                    var value = _params[2].GetBigInteger();
+
+                    //直接操作存儲區
+                    var service = engine.service as StateMachine;
+                    DataCache<StorageKey, StorageItem> storages = service.storages;
+                    var key = new StorageKey
+                    {
+                        ScriptHash = scripthash,
+                        Key = to
+                    };
+                    var lastvalue = storages.GetAndChange(key, () => new StorageItem());
+                    var lastnum = new System.Numerics.BigInteger(lastvalue.Value);
+                    lastnum += value;
+                    lastvalue.Value = lastnum.ToByteArray();
+                }
+                ///其他的nep5接口，待實現
+                return false;
+            }
+            //private bool Contract_GetStorageContext(ExecutionEngine engine)
+            //{
+            //    if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            //    {
+            //        ContractState contract = _interface.GetInterface<ContractState>();
+            //        if (!contracts_created.TryGetValue(contract.ScriptHash, out UInt160 created)) return false;
+            //        if (!created.Equals(new UInt160(engine.CurrentContext.ScriptHash))) return false;
+            //        engine.EvaluationStack.Push(StackItem.FromInterface(new StorageContext
+            //        {
+            //            ScriptHash = contract.ScriptHash,
+            //            IsReadOnly = false
+            //        }));
+            //        return true;
+            //    }
+            //    return false;
+            //}
+            //private bool Storage_Put(ExecutionEngine engine)
+            //{
+            //    if (engine.EvaluationStack.Pop() is InteropInterface _interface)
+            //    {
+            //        StorageContext context = _interface.GetInterface<StorageContext>();
+            //        if (context.IsReadOnly) return false;
+            //        if (!CheckStorageContext(context)) return false;
+            //        byte[] key = engine.EvaluationStack.Pop().GetByteArray();
+            //        if (key.Length > 1024) return false;
+            //        byte[] value = engine.EvaluationStack.Pop().GetByteArray();
+            //        storages.GetAndChange(new StorageKey
+            //        {
+            //            ScriptHash = context.ScriptHash,
+            //            Key = key
+            //        }, () => new StorageItem()).Value = value;
+            //        return true;
+            //    }
+            //    return false;
+            //}
+        }
         /// <summary>
         /// 将指定的区块添加到区块链中
         /// </summary>
@@ -465,7 +545,7 @@ namespace Neo.Core
             {
                 get;
             }
-            bool Run(VM.ExecutionEngine engine, VM.ExecutionContext context);
+            bool Run(UInt160 scripthash, VM.ExecutionEngine engine, VM.ExecutionContext context);
         }
         public class ScriptEX : IScriptEX
         {
@@ -492,18 +572,18 @@ namespace Neo.Core
                 get;
                 private set;
             }
-            static System.Collections.Concurrent.ConcurrentDictionary <string, INativeContract> CustomContract = new System.Collections.Concurrent.ConcurrentDictionary<string, INativeContract>();
+            static System.Collections.Concurrent.ConcurrentDictionary<string, INativeContract> CustomContract = new System.Collections.Concurrent.ConcurrentDictionary<string, INativeContract>();
             public static void RegNativeContract(INativeContract nc)
             {
                 CustomContract[nc.Tag] = nc;
             }
-            public bool RunNative(ExecutionEngine engine, VM.ExecutionContext context)
+            public bool RunNative(byte[] scripthash, ExecutionEngine engine, VM.ExecutionContext context)
             {
                 if (this.isNative == false)
                     throw new Exception("only for native contract");
 
                 var nc = CustomContract[this.nativeTag];
-                return nc.Run(engine,context);
+                return nc.Run(new UInt160(scripthash),engine, context);
             }
         }
         IScriptEX IScriptTable.GetScript(byte[] script_hash)

@@ -12,11 +12,11 @@ namespace Neo.SmartContract
 {
     public class StateMachine : StateReader
     {
-        private readonly Block persisting_block;
-        private readonly DataCache<UInt160, AccountState> accounts;
-        private readonly DataCache<UInt256, AssetState> assets;
-        private readonly DataCache<UInt160, ContractState> contracts;
-        private readonly DataCache<StorageKey, StorageItem> storages;
+        public readonly Block persisting_block;
+        public readonly DataCache<UInt160, AccountState> accounts;
+        public readonly DataCache<UInt256, AssetState> assets;
+        public readonly DataCache<UInt160, ContractState> contracts;
+        public readonly DataCache<StorageKey, StorageItem> storages;
 
         private Dictionary<UInt160, UInt160> contracts_created = new Dictionary<UInt160, UInt160>();
 

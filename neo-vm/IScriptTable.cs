@@ -14,7 +14,7 @@
         {
             get;
         }
-        bool RunNative(ExecutionEngine engine, ExecutionContext context);
+        bool RunNative(byte[] scripthash, ExecutionEngine engine, ExecutionContext context);
 
     }
     public interface IScriptTable

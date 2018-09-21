@@ -95,7 +95,7 @@ namespace Neo.VM
     public class ExecutionEngine : IDisposable
     {
         private readonly IScriptTable table;
-        protected readonly InteropService service;
+        public readonly InteropService service;
 
         public IScriptContainer ScriptContainer { get; }
         public ICrypto Crypto { get; }
@@ -233,7 +233,7 @@ namespace Neo.VM
                             var sex = table.GetScript(script_hash);
                             if (sex.isNative)
                             {
-                                bool bsuc = sex.RunNative(this, context);
+                                bool bsuc = sex.RunNative(script_hash, this, context);
                                 if (!bsuc)
                                 {
                                     State |= VMState.FAULT;
