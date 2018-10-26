@@ -17,7 +17,6 @@ namespace Neo.Core
         public string Author;
         public string Email;
         public string Description;
-        //add a tag for nativeContract;
         public string NativeTag;
 
         public bool HasStorage => ContractProperties.HasFlag(ContractPropertyState.HasStorage);
@@ -53,8 +52,6 @@ namespace Neo.Core
                 Email = Email,
                 Description = Description,
                 NativeTag = NativeTag
-
-
             };
         }
 
@@ -99,7 +96,7 @@ namespace Neo.Core
             writer.WriteVarString(Author);
             writer.WriteVarString(Email);
             writer.WriteVarString(Description);
-            writer.WriteVarString(NativeTag);
+            writer.WriteVarString(NativeTag??"");
         }
 
         public override JObject ToJson()

@@ -608,21 +608,27 @@ namespace Neo.Implementations.Blockchains.LevelDB
                             ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, script_table, service, tx_invocation.Gas);
                             ///add log
                             bool bLog = false;
-                            if (!fullog_localonly)
+                            if(!fullog_localonly)
                             {
                                 var split = block.Header.Index % this.fulllog_splitcount;
                                 if (SmartContract.Debug.FullLog.Path != null && split == this.fulllog_splitindex)// && this.FullLogSkip.Contains(itx.Hash.ToString()) == false)
                                     bLog = true;
                             }
-
-                            if (bLog == false)
+                           
+                            if(bLog==false)
                             {
                                 bLog = SmartContract.Debug.FullLog.TestNeedLog(tx_invocation.Hash);
                             }
                             if (bLog)
                                 engine.BeginDebug();
 
-                            engine.LoadScript(tx_invocation.Script, false);
+                            engine.LogScript(tx_invocation.Script);
+                            engine.LoadScript(tx_invocation.Script);
+                            //engine.LogScript(Helper.HexToBytes("036f6f6f047465737452c11436630a8759e5000f88500017adfa5c8fe2be32ff52c10c61757468656e746963617465677dd9cdfdfbb0a6a1c3f1ed364ca638b11a9fb19a"));
+                            //engine.LoadScript(Helper.HexToBytes("036f6f6f047465737452c11436630a8759e5000f88500017adfa5c8fe2be32ff52c10c61757468656e746963617465677dd9cdfdfbb0a6a1c3f1ed364ca638b11a9fb19a"),-1);
+                            
+                            //Console.WriteLine(tx_invocation.Script.ToHexString());
+                            //Console.WriteLine("tx:"+ tx.Hash.ToString());
                             if (engine.Execute())
                             {
                                 service.Commit();
@@ -633,12 +639,13 @@ namespace Neo.Implementations.Blockchains.LevelDB
                                 ScriptHash = tx_invocation.Script.ToScriptHash(),
                                 VMState = engine.State,
                                 GasConsumed = engine.GasConsumed,
-                                Stack = engine.EvaluationStack.ToArray(),
+                                Stack = engine.ResultStack.ToArray(),
                                 Notifications = service.Notifications.ToArray()
                             });
                             //write fulllog
                             if (bLog)
                             {
+                                //string filename = System.IO.Path.Combine(SmartContract.Debug.FullLog.Path, "test" + ".llvmhex.txt");
                                 string filename = System.IO.Path.Combine(SmartContract.Debug.FullLog.Path, tx.Hash.ToString() + ".llvmhex.txt");
                                 if (engine.FullLog != null)
                                     engine.FullLog.Save(filename);

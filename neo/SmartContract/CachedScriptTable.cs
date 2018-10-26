@@ -24,6 +24,7 @@ namespace Neo.SmartContract
             var scriptstate = contracts[new UInt160(script_hash)];
             return new Blockchain.ScriptEX(scriptstate);
         }
+
         public ContractState GetContractState(byte[] script_hash)
         {
             return contracts[new UInt160(script_hash)];

@@ -1,17 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace Neo.VM
 {
     public class ExecutionContext : IDisposable
     {
-        private ExecutionEngine engine;
         public readonly byte[] Script;
-        public readonly bool PushOnly;
         internal readonly BinaryReader OpReader;
-        internal readonly HashSet<uint> BreakPoints;
-
+        internal readonly int RVCount;
+        private readonly ICrypto crypto;
+        public ExecutionStackRecord EvaluationStack { get; } = new ExecutionStackRecord();
+        public RandomAccessStack<StackItem> AltStack { get; } = new RandomAccessStack<StackItem>();
         public int InstructionPointer
         {
             get
@@ -32,26 +31,17 @@ namespace Neo.VM
             get
             {
                 if (_script_hash == null)
-                    _script_hash = engine.Crypto.Hash160(Script);
+                    _script_hash = crypto.Hash160(Script);
                 return _script_hash;
             }
         }
 
-        internal ExecutionContext(ExecutionEngine engine, byte[] script, bool push_only, HashSet<uint> break_points = null)
+        internal ExecutionContext(ExecutionEngine engine, byte[] script, int rvcount)
         {
-            this.engine = engine;
             this.Script = script;
-            this.PushOnly = push_only;
+            this.RVCount = rvcount;
             this.OpReader = new BinaryReader(new MemoryStream(script, false));
-            this.BreakPoints = break_points ?? new HashSet<uint>();
-        }
-
-        public ExecutionContext Clone()
-        {
-            return new ExecutionContext(engine, Script, PushOnly, BreakPoints)
-            {
-                InstructionPointer = InstructionPointer
-            };
+            this.crypto = engine.Crypto;
         }
 
         public void Dispose()

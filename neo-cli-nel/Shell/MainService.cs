@@ -933,7 +933,7 @@ namespace Neo.Shell
                     LocalNode.LoadState(fs);
                 }
             LocalNode = new LocalNode();
-            //if (useLog)
+            if (useLog)
                 LevelDBBlockchain.ApplicationExecuted += LevelDBBlockchain_ApplicationExecuted;
             Task.Run(() =>
             {

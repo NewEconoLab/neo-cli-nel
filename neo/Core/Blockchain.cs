@@ -149,10 +149,10 @@ namespace Neo.Core
         static Blockchain()
         {
             GenesisBlock.RebuildMerkleRoot();
-
             //native contract 例子
             Blockchain.ScriptEX.RegNativeContract(new SampleNep5());
         }
+
         public class SampleNep5 : Blockchain.INativeContract
         {
             public string Tag
@@ -162,15 +162,14 @@ namespace Neo.Core
                     return "Nep5";
                 }
             }
-
             public bool Run(UInt160 scripthash, ExecutionEngine engine, VM.ExecutionContext context)
             {
-                var name = engine.EvaluationStack.Pop().GetString();
-                var _params = engine.EvaluationStack.Pop() as Neo.VM.Types.Array;
+                var name = engine.CurrentContext.EvaluationStack.Pop().GetString();
+                var _params = engine.CurrentContext.EvaluationStack.Pop() as Neo.VM.Types.Array;
                 if (name == "name")
                 {
                     StackItem returnvalue = System.Text.Encoding.UTF8.GetBytes("native nep5");
-                    engine.EvaluationStack.Push(returnvalue);
+                    engine.CurrentContext.EvaluationStack.Push(returnvalue);
                     return true;
                 }
                 if (name == "transfer")
@@ -178,9 +177,8 @@ namespace Neo.Core
                     var from = _params[0].GetByteArray();
                     var to = _params[1].GetByteArray();
                     var value = _params[2].GetBigInteger();
-
                     //直接操作存儲區
-                    var service = engine.service as StateMachine;
+                    var service = engine.Service as StateMachine;
                     DataCache<StorageKey, StorageItem> storages = service.storages;
                     var key = new StorageKey
                     {
@@ -538,7 +536,6 @@ namespace Neo.Core
         /// <returns>返回下一个区块的散列值</returns>
         public abstract UInt256 GetNextBlockHash(UInt256 hash);
 
-        //增加for nativecontract
         public interface INativeContract
         {
             string Tag
@@ -547,6 +544,7 @@ namespace Neo.Core
             }
             bool Run(UInt160 scripthash, VM.ExecutionEngine engine, VM.ExecutionContext context);
         }
+
         public class ScriptEX : IScriptEX
         {
             public ScriptEX(ContractState state)
@@ -583,7 +581,7 @@ namespace Neo.Core
                     throw new Exception("only for native contract");
 
                 var nc = CustomContract[this.nativeTag];
-                return nc.Run(new UInt160(scripthash),engine, context);
+                return nc.Run(new UInt160(scripthash), engine, context);
             }
         }
         IScriptEX IScriptTable.GetScript(byte[] script_hash)

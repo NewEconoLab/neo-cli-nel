@@ -158,6 +158,8 @@ namespace Neo.SmartContract.Debug
             {
                 if (curOp == null)
                     return;
+                if (curOp.op == VM.OpCode.CALL)
+                    return;
                 curOp.subScript = new LogScript(hash);
                 curOp.subScript.parent = curScript;
                 curScript = curOp.subScript;
