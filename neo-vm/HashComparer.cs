@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 namespace Neo.VM
 {
     internal class HashComparer : IEqualityComparer<byte[]>
@@ -9,6 +10,7 @@ namespace Neo.VM
         {
             return x.SequenceEqual(y);
         }
+
         public int GetHashCode(byte[] obj)
         {
             return BitConverter.ToInt32(obj, 0);

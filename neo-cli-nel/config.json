@@ -1,21 +1,28 @@
 ﻿{
   "ApplicationConfiguration": {
     "Paths": {
-      "Chain": "C:\\NeoCli\\ChainTestNet",
-      "ApplicationLogs": "C:\\NeoCli\\Notifications",
-      "Fulllogs": "C:\\NeoCli\\FullLogs",
-      "FullLogOnlyLocal": false,
-      "Fulllog_splitCount": 1,
-      "Fulllog_splitIndex": 0
+      "Chain": "D:\\NeoCli\\ChainTestNet",
+      "Index": "D:\\NeoCli\\Notifications",
+      "DumpInfos": "D:\\NeoCli\\Dumpinfos",
+      "DumpOnlyLocal": false,
+      "DumpInfo_splitCount": 1,
+      "DumpInfo_splitIndex": 0
     },
     "P2P": {
       "Port": 20333,
       "WsPort": 20334
     },
     "RPC": {
+      "BindAddress": "127.0.0.1",
       "Port": 20332,
       "SslCert": "",
       "SslCertPassword": ""
+    },
+    "UnlockWallet": {
+      "Path": "",
+      "Password": "",
+      "StartConsensus": false,
+      "IsActive": false
     }
   }
 }

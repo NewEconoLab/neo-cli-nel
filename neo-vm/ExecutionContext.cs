@@ -6,11 +6,13 @@ namespace Neo.VM
     public class ExecutionContext : IDisposable
     {
         public readonly byte[] Script;
-        internal readonly BinaryReader OpReader;
         internal readonly int RVCount;
+        internal readonly BinaryReader OpReader;
         private readonly ICrypto crypto;
+
         public ExecutionStackRecord EvaluationStack { get; } = new ExecutionStackRecord();
         public RandomAccessStack<StackItem> AltStack { get; } = new RandomAccessStack<StackItem>();
+
         public int InstructionPointer
         {
             get

@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.Configuration;
-using Neo.Network;
-using System;
-using System.IO;
+﻿using System;
+using System.Net;
+using Microsoft.Extensions.Configuration;
+using Neo.Network.P2P;
 
 namespace Neo
 {
@@ -32,36 +32,37 @@ namespace Neo
     internal class PathsSettings
     {
         public string Chain { get; }
-        public string ApplicationLogs { get; }
-        public string Fulllogs { get; }
-        public bool FullLogOnlyLocal { get; }
-        public int fulllog_splitcount { get; }
-        public int fulllog_splitindex { get; }
+        public string Index { get; }
+        public string DumpInfos { get; }
+        public bool DumpOnlyLocal { get; }
+        public int DumpInfo_splitCount { get; }
+        public int DumpInfo_splitIndex { get; }
+
+
         public PathsSettings(IConfigurationSection section)
         {
+            //this.Chain = string.Format(section.GetSection("Chain").Value, Message.Magic.ToString("X8"));
+            //this.Index = string.Format(section.GetSection("Index").Value, Message.Magic.ToString("X8"));
             this.Chain = section.GetSection("Chain").Value;
-            this.ApplicationLogs = Path.Combine(AppContext.BaseDirectory, $"ApplicationLogs_{Message.Magic:X8}");
-            this.Fulllogs = section.GetSection("Fulllogs").Value;
-            var local = section.GetSection("FullLogOnlyLocal");
+            this.Index = section.GetSection("Index").Value;
+            //添加log配置文件
+            this.DumpInfos = section.GetSection("DumpInfos").Value;
+            var local = section.GetSection("DumpOnlyLocal");
             if (local == null)
-            {
-                this.FullLogOnlyLocal = false;
-            }
+                this.DumpOnlyLocal = false;
             else
-            {
-                this.FullLogOnlyLocal = Boolean.Parse(local.Value);
-            } 
-            var cvalue = section.GetSection("Fulllog_splitCount").Value;
-            var ivalue = section.GetSection("Fulllog_splitIndex").Value;
+                this.DumpOnlyLocal = Boolean.Parse(local.Value);
+            var cvalue = section.GetSection("DumpInfo_splitCount").Value;
+            var ivalue = section.GetSection("DumpInfo_splitIndex").Value;
             if (cvalue == null || ivalue == null)
             {
-                this.fulllog_splitcount = 1;
-                this.fulllog_splitindex = 0;
+                this.DumpInfo_splitCount = 1;
+                this.DumpInfo_splitIndex = 0;
             }
             else
             {
-                this.fulllog_splitcount = int.Parse(cvalue);
-                this.fulllog_splitindex = int.Parse(ivalue);
+                this.DumpInfo_splitCount = int.Parse(cvalue);
+                this.DumpInfo_splitIndex = int.Parse(ivalue);
             }
         }
     }
@@ -80,12 +81,14 @@ namespace Neo
 
     internal class RPCSettings
     {
+        public IPAddress BindAddress { get; }
         public ushort Port { get; }
         public string SslCert { get; }
         public string SslCertPassword { get; }
 
         public RPCSettings(IConfigurationSection section)
         {
+            this.BindAddress = IPAddress.Parse(section.GetSection("BindAddress").Value);
             this.Port = ushort.Parse(section.GetSection("Port").Value);
             this.SslCert = section.GetSection("SslCert").Value;
             this.SslCertPassword = section.GetSection("SslCertPassword").Value;
