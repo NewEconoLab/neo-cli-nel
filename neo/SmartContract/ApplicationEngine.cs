@@ -420,11 +420,6 @@ namespace Neo.SmartContract
                     StepInto();
                     if (State.HasFlag(VMState.HALT) || State.HasFlag(VMState.FAULT))
                         break;
-                    if (!PostStepInto(nextOpcode))
-                    {
-                        State |= VMState.FAULT;
-                        return false;
-                    }
                     if (DumpInfo != null)
                     {
                         if (State.HasFlag(VMState.HALT) || State.HasFlag(VMState.FAULT))
@@ -445,6 +440,10 @@ namespace Neo.SmartContract
                         {
                             result = EvaluationStackRec.PeekWithoutLog(EvaluationStackRec.record.Last().ind);
                         }
+                        else if (ltype == ExecutionStackRecord.OpType.Peek)
+                        {
+                            result = EvaluationStackRec.PeekWithoutLog();
+                        }
                         LogResult(nextOpcode, record, result);
                     }
                 }
@@ -453,6 +452,10 @@ namespace Neo.SmartContract
             {
                 State |= VMState.FAULT;
                 return false;
+            }
+            if (DumpInfo != null)
+            {
+                DumpInfo.Finish(State);
             }
             return !State.HasFlag(VMState.FAULT);
         }

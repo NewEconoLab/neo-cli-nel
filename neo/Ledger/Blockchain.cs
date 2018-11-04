@@ -593,10 +593,10 @@ namespace Neo.Ledger
                                 }
                                 if (bLog)
                                     engine.BeginDebug();
-                                engine.LogScript(tx_invocation.Script);
-                                engine.LoadScript(tx_invocation.Script);
-                                //engine.LogScript(Helper.HexToBytes("036f6f6f047465737452c11436630a8759e5000f88500017adfa5c8fe2be32ff52c10c61757468656e746963617465677dd9cdfdfbb0a6a1c3f1ed364ca638b11a9fb19a"));
-                                //engine.LoadScript(Helper.HexToBytes("036f6f6f047465737452c11436630a8759e5000f88500017adfa5c8fe2be32ff52c10c61757468656e746963617465677dd9cdfdfbb0a6a1c3f1ed364ca638b11a9fb19a"),-1);
+                                //engine.LogScript(tx_invocation.Script);
+                                //engine.LoadScript(tx_invocation.Script);
+                                engine.LogScript(Helper.HexToBytes("04809698002004598d0451e1f5596bda5bbe7290f31a3cf80e317e1f8ed38ac47b76cb0fecbb1436630a8759e5000f88500017adfa5c8fe2be32ff53c105726169736567354a3fb2bd40bd8144ccc6fbfef0de4e427bbfc5"));
+                                engine.LoadScript(Helper.HexToBytes("04809698002004598d0451e1f5596bda5bbe7290f31a3cf80e317e1f8ed38ac47b76cb0fecbb1436630a8759e5000f88500017adfa5c8fe2be32ff53c105726169736567354a3fb2bd40bd8144ccc6fbfef0de4e427bbfc5"),-1);
 
                                 if (engine.Execute())
                                 {
