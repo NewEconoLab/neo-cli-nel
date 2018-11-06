@@ -6,6 +6,7 @@ using Neo.Ledger;
 using Neo.VM;
 using System;
 using System.Linq;
+using Neo;
 
 namespace Neo.Plugins
 {
@@ -57,6 +58,12 @@ namespace Neo.Plugins
                     return execution;
                 }).ToArray();
                 db.Put(WriteOptions.Default, e.Transaction.Hash.ToArray(), json.ToString());
+
+                if (!string.IsNullOrEmpty(Settings.Default.Conn) && !string.IsNullOrEmpty(Settings.Default.Db) && !string.IsNullOrEmpty(Settings.Default.Coll))
+                {
+                    //增加applicationLog输入到数据库
+                    MongoHelper.InsetOne(Settings.Default.Conn, Settings.Default.Db, Settings.Default.Coll,MongoDB.Bson.BsonDocument.Parse(json.ToString()));
+                }
             }
         }
 

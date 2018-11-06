@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\neo\neo.csproj" />
+    <ProjectReference Include="..\..\neo\neo.csproj" />
   </ItemGroup>
 
 </Project>
