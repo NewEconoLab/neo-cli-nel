@@ -593,11 +593,8 @@ namespace Neo.Ledger
                                 }
                                 if (bLog)
                                     engine.BeginDebug();
-                                //engine.LogScript(tx_invocation.Script);
-                                //engine.LoadScript(tx_invocation.Script);
-                                engine.LogScript(Helper.HexToBytes("04809698002004598d0451e1f5596bda5bbe7290f31a3cf80e317e1f8ed38ac47b76cb0fecbb1436630a8759e5000f88500017adfa5c8fe2be32ff53c105726169736567354a3fb2bd40bd8144ccc6fbfef0de4e427bbfc5"));
-                                engine.LoadScript(Helper.HexToBytes("04809698002004598d0451e1f5596bda5bbe7290f31a3cf80e317e1f8ed38ac47b76cb0fecbb1436630a8759e5000f88500017adfa5c8fe2be32ff53c105726169736567354a3fb2bd40bd8144ccc6fbfef0de4e427bbfc5"),-1);
-
+                                engine.LogScript(tx_invocation.Script);
+                                engine.LoadScript(tx_invocation.Script);
                                 if (engine.Execute())
                                 {
                                     engine.Service.Commit();
