@@ -611,10 +611,21 @@ namespace Neo.Ledger
                                 //write dumpinfo
                                 if (bLog)
                                 {
-                                    string filename = System.IO.Path.Combine(SmartContract.Debug.DumpInfo.Path, tx.Hash.ToString() + ".llvmhex.txt");
-                                    if (engine.DumpInfo != null)
-                                        engine.DumpInfo.Save(filename);
+                                    if (Settings.Default.MongoSetting.ContainsKey("DumpInfoConn") && Settings.Default.MongoSetting.ContainsKey("DumpInfoDataBase") && Settings.Default.MongoSetting.ContainsKey("DumpInfoColl"))
+                                    {
+                                        MyJson.JsonNode_Object data = new MyJson.JsonNode_Object();
+                                        data["txid"] =new MyJson.JsonNode_ValueString(tx.Hash.ToString());
+                                        data["dimpInfo"] = new MyJson.JsonNode_ValueString(engine.DumpInfo.SaveToString());
+                                        MongoHelper.InsetOne(Settings.Default.MongoSetting["DumpInfoConn"], Settings.Default.MongoSetting["DumpInfoDataBase"], Settings.Default.MongoSetting["DumpInfoColl"], MongoDB.Bson.BsonDocument.Parse(data.ToString()));
+                                    }
+                                    else
+                                    {
+                                        string filename = System.IO.Path.Combine(SmartContract.Debug.DumpInfo.Path, tx.Hash.ToString() + ".llvmhex.txt");
+                                        if (engine.DumpInfo != null)
+                                            engine.DumpInfo.Save(filename);
+                                    }
                                 }
+
                             }
                             break;
                     }
