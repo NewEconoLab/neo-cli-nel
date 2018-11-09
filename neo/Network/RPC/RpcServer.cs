@@ -492,6 +492,7 @@ namespace Neo.Network.RPC
                     {
                         Transaction tx = Transaction.DeserializeFrom(_params[0].AsString().HexToBytes());
                         RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
+                        Neo.SmartContract.Debug.DumpInfo.RegNeedLog(tx.Hash);
                         return GetRelayResult(reason);
                     }
                 case "sendtoaddress":
