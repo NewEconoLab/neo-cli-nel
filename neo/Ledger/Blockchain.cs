@@ -611,7 +611,12 @@ namespace Neo.Ledger
                                 //write dumpinfo
                                 if (bLog)
                                 {
-                                    if (Settings.Default.MongoSetting.ContainsKey("DumpInfoConn") && Settings.Default.MongoSetting.ContainsKey("DumpInfoDataBase") && Settings.Default.MongoSetting.ContainsKey("DumpInfoColl"))
+                                    if (Settings.Default.MongoSetting.ContainsKey("DumpInfoConn") 
+                                        && Settings.Default.MongoSetting.ContainsKey("DumpInfoDataBase") 
+                                        && Settings.Default.MongoSetting.ContainsKey("DumpInfoColl")
+                                        &&!string.IsNullOrEmpty(Settings.Default.MongoSetting["DumpInfoConn"])
+                                        && !string.IsNullOrEmpty(Settings.Default.MongoSetting["DumpInfoDataBase"])
+                                        && !string.IsNullOrEmpty(Settings.Default.MongoSetting["DumpInfoColl"]))
                                     {
                                         MyJson.JsonNode_Object data = new MyJson.JsonNode_Object();
                                         data["txid"] =new MyJson.JsonNode_ValueString(tx.Hash.ToString());
