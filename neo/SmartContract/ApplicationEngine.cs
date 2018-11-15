@@ -633,12 +633,36 @@ namespace Neo.SmartContract
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
                 return true;
             gas_consumed = checked(gas_consumed + GetPrice(nextOpcode) * ratio);
-            if (!testMode && gas_consumed > gas_amount) return false;
-            if (!CheckItemSize(nextOpcode)) return false;
-            if (!CheckArraySize(nextOpcode)) return false;
-            if (!CheckInvocationStack(nextOpcode)) return false;
-            if (!CheckBigIntegers(nextOpcode)) return false;
-            if (!CheckDynamicInvoke(nextOpcode)) return false;
+            if (!testMode && gas_consumed > gas_amount)
+            {
+                if (DumpInfo != null) DumpInfo.Error("gas_consumed > gas_amount");
+                return false;
+            }
+            if (!CheckItemSize(nextOpcode))
+            {
+                if (DumpInfo != null) DumpInfo.Error("CheckItemSize");
+                return false;
+            }
+            if (!CheckArraySize(nextOpcode))
+            {
+                if (DumpInfo != null) DumpInfo.Error("CheckArraySize");
+                return false;
+            }
+            if (!CheckInvocationStack(nextOpcode))
+            {
+                if (DumpInfo != null) DumpInfo.Error("CheckInvocationStack");
+                return false;
+            }
+            if (!CheckBigIntegers(nextOpcode))
+            {
+                if (DumpInfo != null) DumpInfo.Error("CheckBigIntegers");
+                return false;
+            }
+            if (!CheckDynamicInvoke(nextOpcode))
+            {
+                if (DumpInfo != null) DumpInfo.Error("CheckDynamicInvoke");
+                return false;
+            }
             return true;
         }
 
