@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P.Payloads;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,7 @@ namespace Neo
         public byte AddressVersion { get; private set; }
         public string[] StandbyValidators { get; private set; }
         public string[] SeedList { get; private set; }
+        public string[] MongoDbIndexs { get; private set; }
         public IReadOnlyDictionary<string,string> MongoSetting { get; private set; }
         public IReadOnlyDictionary<TransactionType, Fixed8> SystemFee { get; private set; }
         public uint SecondsPerBlock { get; private set; }
@@ -32,7 +34,40 @@ namespace Neo
             this.SeedList = section.GetSection("SeedList").GetChildren().Select(p => p.Value).ToArray();
             this.SystemFee = section.GetSection("SystemFee").GetChildren().ToDictionary(p => (TransactionType)Enum.Parse(typeof(TransactionType), p.Key, true), p => Fixed8.Parse(p.Value));
             this.SecondsPerBlock = GetValueOrDefault(section.GetSection("SecondsPerBlock"), 15u, p => uint.Parse(p));
-            this.MongoSetting = section.GetSection("MongoSetting").GetChildren().ToDictionary(p => p.Key, p => p.Value);
+            this.MongoSetting =section.GetSection("MongoSetting").GetChildren().ToDictionary(p => p.Key, p => p.Value);
+            this.MongoDbIndexs = section.GetSection("MongoDbIndexs").GetChildren().Select(p => p.Value).ToArray();
+            if (this.MongoSetting.ContainsKey("Conn")
+                && this.MongoSetting.ContainsKey("DataBase")
+                && this.MongoSetting.ContainsKey("DumpInfoColl")
+                && !string.IsNullOrEmpty(this.MongoSetting["Conn"])
+                && !string.IsNullOrEmpty(this.MongoSetting["DataBase"])
+                && !string.IsNullOrEmpty(this.MongoSetting["DumpInfoColl"]))
+            {
+                for (var i = 0; i < this.MongoDbIndexs.Length; i++)
+                {
+                    SetMongoDbIndex(this.MongoDbIndexs[i]);
+                }
+            }
+            else
+            {
+                this.MongoSetting = null;
+            }
+        }
+
+        public void SetMongoDbIndex(string mongoDbIndex)
+        {
+            JObject joIndex = JObject.Parse(mongoDbIndex);
+            string collName = (string)joIndex["collName"];
+            JArray indexs = (JArray)joIndex["indexs"];
+            for (var i = 0; i < indexs.Count; i++)
+            {
+                string indexName = (string)indexs[i]["indexName"];
+                string indexDefinition = indexs[i]["indexDefinition"].ToString();
+                bool isUnique = false;
+                if (indexs[i]["isUnique"] != null)
+                    isUnique = (bool)indexs[i]["isUnique"];
+                MongoHelper.SetIndex(this.MongoSetting["Conn"], this.MongoSetting["DataBase"], collName, indexDefinition, indexName, isUnique);
+            }
         }
 
         public T GetValueOrDefault<T>(IConfigurationSection section, T defaultValue, Func<string, T> selector)

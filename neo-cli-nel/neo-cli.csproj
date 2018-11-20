@@ -29,9 +29,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Network\**" />
-    <EmbeddedResource Remove="Network\**" />
-    <None Remove="Network\**" />
+    <Compile Remove="Network/**" />
+    <EmbeddedResource Remove="Network/**" />
+    <None Remove="Network/**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -42,18 +42,18 @@
     <Content Include="libleveldb.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="x64\libleveldb.dll">
+    <Content Include="x64/libleveldb.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="x86\libleveldb.dll">
+    <Content Include="x86/libleveldb.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\llvm\llvm.csproj" />
-    <ProjectReference Include="..\neo-vm\neo-vm.csproj" />
-    <ProjectReference Include="..\neo\neo.csproj" />
+    <ProjectReference Include="../llvm/llvm.csproj" />
+    <ProjectReference Include="../neo-vm/neo-vm.csproj" />
+    <ProjectReference Include="../neo/neo.csproj" />
   </ItemGroup>
 
   <ItemGroup>

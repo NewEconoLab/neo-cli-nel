@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
+using Newtonsoft.Json.Linq;
+using System.Linq;
 using System.Reflection;
 
 namespace Neo.Plugins
@@ -10,6 +12,7 @@ namespace Neo.Plugins
         public string Conn { get; }
         public string Db { get; }
         public string Coll { get; }
+        public string[] MongoDbIndex { get; }
 
         public static Settings Default { get; }
 
@@ -24,6 +27,30 @@ namespace Neo.Plugins
             this.Conn = section.GetSection("Conn").Value;
             this.Db = section.GetSection("Db").Value;
             this.Coll = section.GetSection("Coll").Value;
+            this.MongoDbIndex = section.GetSection("MongoDbIndexs").GetChildren().Select(p => p.Value).ToArray();
+            if (!string.IsNullOrEmpty(this.Conn) && !string.IsNullOrEmpty(this.Conn) && !string.IsNullOrEmpty(this.Conn))
+            {
+                //创建索引
+                for (var i = 0; i < this.MongoDbIndex.Length; i++)
+                {
+                    SetMongoDbIndex(this.MongoDbIndex[i]);
+                }
+            }
+        }
+
+        public void SetMongoDbIndex(string mongoDbIndex)
+        {
+            JObject joIndex = JObject.Parse(mongoDbIndex);
+            JArray indexs = (JArray)joIndex["indexs"];
+            for(var i = 0;i<indexs.Count;i++)
+            {
+                string indexName = (string)indexs[i]["indexName"];
+                string indexDefinition = indexs[i]["indexDefinition"].ToString();
+                bool isUnique = false;
+                if (indexs[i]["isUnique"]!=null)
+                    isUnique = (bool)indexs[i]["isUnique"];
+                MongoHelper.SetIndex(this.Conn, this.Db, this.Coll, indexDefinition, indexName, isUnique);
+            }
         }
     }
 }

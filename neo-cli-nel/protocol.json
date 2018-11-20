@@ -19,15 +19,18 @@
       "seed5.neo.org:20333"
     ],
     "MongoSetting": {
-      "DumpInfoConn": "",
-      "DumpInfoDataBase": "",
-      "DumpInfoColl": ""
+      "Conn": "",
+      "DataBase": "",
+      "DumpInfoColl": "",
+      "MongoDbIndexs": [
+        "{\"collName\": \"dumpinfos\",\"indexs\": [{\"indexName\": \"i_txid_unique\",\"indexDefinition\": {\"txid\": 1},\"isUnique\": true}]}"
+      ]
     },
     "SystemFee": {
-      "EnrollmentTransaction": 10,
-      "IssueTransaction": 5,
-      "PublishTransaction": 5,
-      "RegisterTransaction": 100
+      "EnrollmentTransaction": 1000,
+      "IssueTransaction": 500,
+      "PublishTransaction": 500,
+      "RegisterTransaction": 10000
     }
   }
 }

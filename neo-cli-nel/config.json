@@ -1,9 +1,10 @@
 ﻿{
   "ApplicationConfiguration": {
     "Paths": {
-      "Chain": "D:\\NeoCli\\ChainTestNet",
-      "Index": "D:\\NeoCli\\Notifications",
-      "DumpInfos": "D:\\NeoCli\\Dumpinfos",
+      "Chain": "D://NeoCli//ChainTestNet",
+      "Index": "D://NeoCli//Notifications",
+      "DumpInfos": "D://NeoCli//Dumpinfos",
+      "Dump": true,
       "DumpOnlyLocal": false,
       "DumpInfo_splitCount": 1,
       "DumpInfo_splitIndex": 0

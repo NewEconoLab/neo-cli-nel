@@ -3,6 +3,9 @@
     "Path": "ApplicationLogs_{0}",
     "Conn": "",
     "Db": "",
-    "Coll": ""
+    "Coll": "",
+    "MongoDbIndexs": [
+      "{\"collName\": \"notify\",\"indexs\":[{\"indexName\": \"i_txid_unique\",\"indexDefinition\":{\"txid\": 1},\"isUnique\": true},{\"indexName\": \"i_blockindex\",\"indexDefinition\":{\"blockindex\":1}},{\"indexName\":\"i_blockindex_txid\",\"indexDefinition\": {\"blockindex\": 1,\"txid\": 1}}]}"
+    ]
   }
 }

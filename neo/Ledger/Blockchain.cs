@@ -23,7 +23,7 @@ namespace Neo.Ledger
     public sealed class Blockchain : UntypedActor
     {
         public class Register { }
-        public class ApplicationExecuted { public Transaction Transaction; public ApplicationExecutionResult[] ExecutionResults; }
+        public class ApplicationExecuted { public Transaction Transaction; public ApplicationExecutionResult[] ExecutionResults; public uint BlockIndex; }
         public class PersistCompleted { public Block Block; }
         public class Import { public IEnumerable<Block> Blocks; }
         public class ImportCompleted { }
@@ -611,17 +611,12 @@ namespace Neo.Ledger
                                 //write dumpinfo
                                 if (bLog)
                                 {
-                                    if (Settings.Default.MongoSetting.ContainsKey("DumpInfoConn") 
-                                        && Settings.Default.MongoSetting.ContainsKey("DumpInfoDataBase") 
-                                        && Settings.Default.MongoSetting.ContainsKey("DumpInfoColl")
-                                        &&!string.IsNullOrEmpty(Settings.Default.MongoSetting["DumpInfoConn"])
-                                        && !string.IsNullOrEmpty(Settings.Default.MongoSetting["DumpInfoDataBase"])
-                                        && !string.IsNullOrEmpty(Settings.Default.MongoSetting["DumpInfoColl"]))
+                                    if (Settings.Default.MongoSetting !=null)
                                     {
                                         MyJson.JsonNode_Object data = new MyJson.JsonNode_Object();
                                         data["txid"] =new MyJson.JsonNode_ValueString(tx.Hash.ToString());
                                         data["dimpInfo"] = new MyJson.JsonNode_ValueString(engine.DumpInfo.SaveToString());
-                                        MongoHelper.InsetOne(Settings.Default.MongoSetting["DumpInfoConn"], Settings.Default.MongoSetting["DumpInfoDataBase"], Settings.Default.MongoSetting["DumpInfoColl"], MongoDB.Bson.BsonDocument.Parse(data.ToString()));
+                                        MongoHelper.InsetOne(Settings.Default.MongoSetting["Conn"], Settings.Default.MongoSetting["DataBase"], Settings.Default.MongoSetting["DumpInfoColl"], MongoDB.Bson.BsonDocument.Parse(data.ToString()));
                                     }
                                     else
                                     {
@@ -638,7 +633,8 @@ namespace Neo.Ledger
                         Distribute(new ApplicationExecuted
                         {
                             Transaction = tx,
-                            ExecutionResults = execution_results.ToArray()
+                            ExecutionResults = execution_results.ToArray(),
+                            BlockIndex = block.Index
                         });
                 }
                 snapshot.BlockHashIndex.GetAndChange().Hash = block.Hash;

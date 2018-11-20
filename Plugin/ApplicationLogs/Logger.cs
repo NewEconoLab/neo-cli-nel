@@ -26,6 +26,7 @@ namespace Neo.Plugins
             {
                 JObject json = new JObject();
                 json["txid"] = e.Transaction.Hash.ToString();
+                json["blockindex"] = e.BlockIndex;
                 json["executions"] = e.ExecutionResults.Select(p =>
                 {
                     JObject execution = new JObject();
@@ -57,12 +58,15 @@ namespace Neo.Plugins
                     }).ToArray();
                     return execution;
                 }).ToArray();
-                db.Put(WriteOptions.Default, e.Transaction.Hash.ToArray(), json.ToString());
 
                 if (!string.IsNullOrEmpty(Settings.Default.Conn) && !string.IsNullOrEmpty(Settings.Default.Db) && !string.IsNullOrEmpty(Settings.Default.Coll))
                 {
                     //增加applicationLog输入到数据库
-                    MongoHelper.InsetOne(Settings.Default.Conn, Settings.Default.Db, Settings.Default.Coll,MongoDB.Bson.BsonDocument.Parse(json.ToString()));
+                    MongoHelper.InsetOne(Settings.Default.Conn, Settings.Default.Db, Settings.Default.Coll, MongoDB.Bson.BsonDocument.Parse(json.ToString()));
+                }
+                else
+                {
+                    db.Put(WriteOptions.Default, e.Transaction.Hash.ToArray(), json.ToString());
                 }
             }
         }
