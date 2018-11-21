@@ -21,11 +21,11 @@
     "MongoSetting": {
       "Conn": "",
       "DataBase": "",
-      "DumpInfoColl": "",
-      "MongoDbIndexs": [
-        "{\"collName\": \"dumpinfos\",\"indexs\": [{\"indexName\": \"i_txid_unique\",\"indexDefinition\": {\"txid\": 1},\"isUnique\": true}]}"
-      ]
+      "DumpInfoColl": ""
     },
+    "MongoDbIndexs": [
+      "{\"collName\": \"dumpinfos\",\"indexs\": [{\"indexName\": \"i_txid_unique\",\"indexDefinition\": {\"txid\": 1},\"isUnique\": true}]}"
+    ],
     "SystemFee": {
       "EnrollmentTransaction": 1000,
       "IssueTransaction": 500,
