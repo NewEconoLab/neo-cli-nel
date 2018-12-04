@@ -657,7 +657,7 @@ namespace Neo.Ledger
                     MongoHelper.InsetOne(Settings.Default.MongoSetting["Conn"], Settings.Default.MongoSetting["DataBase"], Settings.Default.MongoSetting["Block"], BsonDocument.Parse(block.ToJson().ToString()));
                     //更新systemcounter
                     var json = new JObject();
-                    json["counter"] = "notify";
+                    json["counter"] = "block";
                     string whereFliter = json.ToString();
                     json["lastBlockindex"] = block.Index;
                     string replaceFliter = json.ToString();
