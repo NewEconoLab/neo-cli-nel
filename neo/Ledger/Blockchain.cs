@@ -6,6 +6,7 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Actors;
 using Neo.IO.Caching;
+using Neo.IO.Json;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -654,6 +655,13 @@ namespace Neo.Ledger
                 {
                     //block 存入数据库
                     MongoHelper.InsetOne(Settings.Default.MongoSetting["Conn"], Settings.Default.MongoSetting["DataBase"], Settings.Default.MongoSetting["Block"], BsonDocument.Parse(block.ToJson().ToString()));
+                    //更新systemcounter
+                    var json = new JObject();
+                    json["counter"] = "notify";
+                    string whereFliter = json.ToString();
+                    json["lastBlockindex"] = block.Index;
+                    string replaceFliter = json.ToString();
+                    MongoHelper.ReplaceData(Settings.Default.MongoSetting["Conn"], Settings.Default.MongoSetting["DataBase"], "system_counter", whereFliter, MongoDB.Bson.BsonDocument.Parse(replaceFliter));
                 }
             }
             UpdateCurrentSnapshot();
