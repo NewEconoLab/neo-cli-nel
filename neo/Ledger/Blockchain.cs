@@ -612,7 +612,7 @@ namespace Neo.Ledger
                                 //write dumpinfo
                                 if (bLog)
                                 {
-                                    if (Settings.Default.MongoSetting !=null)
+                                    if (!string.IsNullOrEmpty(Settings.Default.MongoSetting["Conn"]) && !string.IsNullOrEmpty(Settings.Default.MongoSetting["DataBase"]) && !string.IsNullOrEmpty(Settings.Default.MongoSetting["DumpInfoColl"]))
                                     {
                                         MyJson.JsonNode_Object data = new MyJson.JsonNode_Object();
                                         data["txid"] =new MyJson.JsonNode_ValueString(tx.Hash.ToString());
@@ -649,8 +649,12 @@ namespace Neo.Ledger
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot);
                 snapshot.Commit();
-                //block 存入数据库
-                MongoHelper.InsetOne(Settings.Default.MongoSetting["Conn"], Settings.Default.MongoSetting["DataBase"], Settings.Default.MongoSetting["Block"], BsonDocument.Parse(block.ToJson().ToString()));
+
+                if (!string.IsNullOrEmpty(Settings.Default.MongoSetting["Conn"]) && !string.IsNullOrEmpty(Settings.Default.MongoSetting["DataBase"]) && !string.IsNullOrEmpty(Settings.Default.MongoSetting["Block"]))
+                {
+                    //block 存入数据库
+                    MongoHelper.InsetOne(Settings.Default.MongoSetting["Conn"], Settings.Default.MongoSetting["DataBase"], Settings.Default.MongoSetting["Block"], BsonDocument.Parse(block.ToJson().ToString()));
+                }
             }
             UpdateCurrentSnapshot();
             OnPersistCompleted(block);

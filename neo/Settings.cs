@@ -36,21 +36,17 @@ namespace Neo
             this.SecondsPerBlock = GetValueOrDefault(section.GetSection("SecondsPerBlock"), 15u, p => uint.Parse(p));
             this.MongoSetting =section.GetSection("MongoSetting").GetChildren().ToDictionary(p => p.Key, p => p.Value);
             this.MongoDbIndexs = section.GetSection("MongoDbIndexs").GetChildren().Select(p => p.Value).ToArray();
-            if (this.MongoSetting.ContainsKey("Conn")
-                && this.MongoSetting.ContainsKey("DataBase")
-                && this.MongoSetting.ContainsKey("DumpInfoColl")
-                && !string.IsNullOrEmpty(this.MongoSetting["Conn"])
-                && !string.IsNullOrEmpty(this.MongoSetting["DataBase"])
-                && !string.IsNullOrEmpty(this.MongoSetting["DumpInfoColl"]))
+
+            for (var i = 0; i < this.MongoDbIndexs.Length; i++)
             {
-                for (var i = 0; i < this.MongoDbIndexs.Length; i++)
+                try
                 {
                     SetMongoDbIndex(this.MongoDbIndexs[i]);
                 }
-            }
-            else
-            {
-                this.MongoSetting = null;
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             }
         }
 
