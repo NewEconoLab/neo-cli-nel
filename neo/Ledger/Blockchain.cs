@@ -1,5 +1,6 @@
 ﻿using Akka.Actor;
 using Akka.Configuration;
+using MongoDB.Bson;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
@@ -648,6 +649,8 @@ namespace Neo.Ledger
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot);
                 snapshot.Commit();
+                //block 存入数据库
+                MongoHelper.InsetOne(Settings.Default.MongoSetting["Conn"], Settings.Default.MongoSetting["DataBase"], Settings.Default.MongoSetting["Block"], BsonDocument.Parse(block.ToJson().ToString()));
             }
             UpdateCurrentSnapshot();
             OnPersistCompleted(block);
