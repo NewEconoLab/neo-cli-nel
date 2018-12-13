@@ -19,7 +19,7 @@ namespace Neo.Plugins
             this.db = db;
             blockchain.Tell(new Blockchain.Register());
         }
-        private int blockindex = -1;
+
         protected override void OnReceive(object message)
         {
             if (message is Blockchain.ApplicationExecuted e)
@@ -63,13 +63,13 @@ namespace Neo.Plugins
                     //增加applicationLog输入到数据库
                     MongoHelper.InsetOne(Settings.Default.Conn, Settings.Default.Db, Settings.Default.Coll, MongoDB.Bson.BsonDocument.Parse(json.ToString()));
 
-                    if (blockindex != e.BlockIndex)
+                    if (e.IsLastTransaction)
                     {
-                        blockindex = (int)e.BlockIndex;
+                        var blockindex = (int)e.BlockIndex;
                         json = new JObject();
                         json["counter"] = "notify";
                         string whereFliter = json.ToString();
-                        json["lastBlockindex"] = blockindex-1;
+                        json["lastBlockindex"] = blockindex;
                         string replaceFliter = json.ToString();
                         MongoHelper.ReplaceData(Settings.Default.Conn, Settings.Default.Db,"system_counter", whereFliter, MongoDB.Bson.BsonDocument.Parse(replaceFliter));
                     }

@@ -25,7 +25,7 @@ namespace Neo.Ledger
     public sealed class Blockchain : UntypedActor
     {
         public class Register { }
-        public class ApplicationExecuted { public Transaction Transaction; public ApplicationExecutionResult[] ExecutionResults; public uint BlockIndex; }
+        public class ApplicationExecuted { public Transaction Transaction; public ApplicationExecutionResult[] ExecutionResults; public uint BlockIndex; public bool IsLastTransaction = false; }
         public class PersistCompleted { public Block Block; }
         public class Import { public IEnumerable<Block> Blocks; }
         public class ImportCompleted { }
@@ -464,6 +464,7 @@ namespace Neo.Ledger
                     SystemFeeAmount = snapshot.GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.SystemFee),
                     TrimmedBlock = block.Trim()
                 });
+                Transaction lastTransaction = block.Transactions.Last();
                 foreach (Transaction tx in block.Transactions)
                 {
                     snapshot.Transactions.Add(tx.Hash, new TransactionState
@@ -646,7 +647,8 @@ namespace Neo.Ledger
                         {
                             Transaction = tx,
                             ExecutionResults = execution_results.ToArray(),
-                            BlockIndex = block.Index
+                            BlockIndex = block.Index,
+                            IsLastTransaction = tx.Hash == lastTransaction.Hash
                         });
                 }
                 snapshot.BlockHashIndex.GetAndChange().Hash = block.Hash;
