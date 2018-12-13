@@ -69,7 +69,7 @@ namespace Neo.Plugins
                         json = new JObject();
                         json["counter"] = "notify";
                         string whereFliter = json.ToString();
-                        json["lastBlockindex"] = blockindex;
+                        json["lastBlockindex"] = blockindex-1;
                         string replaceFliter = json.ToString();
                         MongoHelper.ReplaceData(Settings.Default.Conn, Settings.Default.Db,"system_counter", whereFliter, MongoDB.Bson.BsonDocument.Parse(replaceFliter));
                     }
