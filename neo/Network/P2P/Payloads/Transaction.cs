@@ -34,6 +34,21 @@ namespace Neo.Network.P2P.Payloads
         public TransactionOutput[] Outputs;
         public Witness[] Witnesses { get; set; }
 
+        private Fixed8 _feePerByte = -Fixed8.Satoshi;
+        /// <summary>
+        /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
+        /// <para>Note that this property must be used with care. Getting the value of this property multiple times will return the same result. The value of this property can only be obtained after the transaction has been completely built (no longer modified).</para>
+        /// </summary>
+        public Fixed8 FeePerByte
+        {
+            get
+            {
+                if (_feePerByte == -Fixed8.Satoshi)
+                    _feePerByte = NetworkFee / Size;
+                return _feePerByte;
+            }
+        }
+
         private UInt256 _hash = null;
         public UInt256 Hash
         {
@@ -48,6 +63,8 @@ namespace Neo.Network.P2P.Payloads
         }
 
         InventoryType IInventory.InventoryType => InventoryType.TX;
+
+        public bool IsLowPriority => NetworkFee < Settings.Default.LowPriorityThreshold;
 
         private Fixed8 _network_fee = -Fixed8.Satoshi;
         public virtual Fixed8 NetworkFee

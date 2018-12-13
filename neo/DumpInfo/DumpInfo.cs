@@ -49,14 +49,14 @@ namespace Neo.SmartContract.Debug
             var type = item.GetType().Name;
             if (type == "InteropInterface")
             {
-                var _interface = (item as VM.Types.InteropInterface).GetInterface<VM.IInteropInterface>();
+                var _interface = (item as VM.Types.InteropInterface).GetInterface<VM.Types.InteropInterface>();
                 if (_interface == null)
                 {
                     json.SetDictValue(type, "<null>");
                 }
                 else
                 {
-                    json.SetDictValue(type, (item as VM.Types.InteropInterface).GetInterface<VM.IInteropInterface>().GetType().Name);
+                    json.SetDictValue(type, (item as VM.Types.InteropInterface).GetInterface<VM.Types.InteropInterface>().GetType().Name);
                 }
             }
 
