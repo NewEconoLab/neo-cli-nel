@@ -2,7 +2,6 @@
 using Neo.Network.P2P;
 using Newtonsoft.Json.Linq;
 using System.Linq;
-using System.Reflection;
 
 namespace Neo.Plugins
 {
@@ -14,14 +13,9 @@ namespace Neo.Plugins
         public string Coll { get; }
         public string[] MongoDbIndex { get; }
 
-        public static Settings Default { get; }
+        public static Settings Default { get; private set; }
 
-        static Settings()
-        {
-            Default = new Settings(Assembly.GetExecutingAssembly().GetConfiguration());
-        }
-
-        public Settings(IConfigurationSection section)
+        private Settings(IConfigurationSection section)
         {
             this.Path = string.Format(section.GetSection("Path").Value, Message.Magic.ToString("X8"));
             this.Conn = section.GetSection("Conn").Value;
@@ -36,6 +30,11 @@ namespace Neo.Plugins
                     SetMongoDbIndex(this.MongoDbIndex[i]);
                 }
             }
+        }
+
+        public static void Load(IConfigurationSection section)
+        {
+            Default = new Settings(section);
         }
 
         public void SetMongoDbIndex(string mongoDbIndex)

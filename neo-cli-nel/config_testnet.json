@@ -1,11 +1,11 @@
 ﻿{
   "ApplicationConfiguration": {
     "Paths": {
-      "Chain": "D://NeoCli//ChainTestNet",
-      "Index": "D://NeoCli//Notifications",
-      "DumpInfos": "D://NeoCli//Dumpinfos",
+      "Chain": "Chain_{0}",
+      "Index": "Index_{0}",
+      "DumpInfos": "DumpInfos_{0}",
       "Dump": true,
-      "DumpOnlyLocal": false,
+      "DumpOnlyLocal": true,
       "DumpInfo_splitCount": 1,
       "DumpInfo_splitIndex": 0
     },
@@ -14,7 +14,7 @@
       "WsPort": 20334
     },
     "RPC": {
-      "BindAddress": "127.0.0.1",
+      "BindAddress": "0.0.0.0",
       "Port": 20332,
       "SslCert": "",
       "SslCertPassword": ""

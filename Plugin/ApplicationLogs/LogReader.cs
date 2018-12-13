@@ -8,12 +8,13 @@ namespace Neo.Plugins
 {
     public class LogReader : Plugin, IRpcPlugin
     {
-        private readonly DB db = DB.Open(Path.GetFullPath(Settings.Default.Path), new Options { CreateIfMissing = true });
+        private readonly DB db;
 
         public override string Name => "ApplicationLogs";
 
         public LogReader()
         {
+            this.db = DB.Open(Path.GetFullPath(Settings.Default.Path), new Options { CreateIfMissing = true });
             System.ActorSystem.ActorOf(Logger.Props(System.Blockchain, db));
         }
 
@@ -24,6 +25,11 @@ namespace Neo.Plugins
             if (!db.TryGet(ReadOptions.Default, hash.ToArray(), out Slice value))
                 throw new RpcException(-100, "Unknown transaction");
             return JObject.Parse(value.ToString());
+        }
+
+        public override void Configure()
+        {
+            Settings.Load(GetConfiguration());
         }
     }
 }

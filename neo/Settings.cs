@@ -47,7 +47,6 @@ namespace Neo
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
                 }
             }
         }
