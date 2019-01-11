@@ -589,15 +589,15 @@ namespace Neo.Ledger
                             break;
 #pragma warning restore CS0612
                         case InvocationTransaction tx_invocation:
-                            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, snapshot.Clone(), tx_invocation.Gas))
+                            var clone = snapshot.Clone();
+                            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, clone, tx_invocation.Gas))
                             {
-
                                 ///add log
                                 bool bLog = false;
-                                if (!(this.Store as Neo.Persistence.LevelDB.LevelDBStore).dumpInfo_onlylocal)
+                                if (!(this.Store as Neo.Persistence.LightDB.LightDBStore).dumpInfo_onlylocal)
                                 {
-                                    var split = block.Header.Index % (this.Store as Neo.Persistence.LevelDB.LevelDBStore).dumpInfo_splitcount;
-                                    if (SmartContract.Debug.DumpInfo.Path != null && split == (this.Store as Neo.Persistence.LevelDB.LevelDBStore).dumpInfo_splitindex)// && this.FullLogSkip.Contains(itx.Hash.ToString()) == false)
+                                    var split = block.Header.Index % (this.Store as Neo.Persistence.LightDB.LightDBStore).dumpInfo_splitcount;
+                                    if (SmartContract.Debug.DumpInfo.Path != null && split == (this.Store as Neo.Persistence.LightDB.LightDBStore).dumpInfo_splitindex)// && this.FullLogSkip.Contains(itx.Hash.ToString()) == false)
                                         bLog = true;
                                 }
                                 if (bLog == false)

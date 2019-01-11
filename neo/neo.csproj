@@ -24,6 +24,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="IO\Data\LevelDB\**" />
+    <Compile Remove="Persistence\LevelDB\**" />
+    <EmbeddedResource Remove="IO\Data\LevelDB\**" />
+    <EmbeddedResource Remove="Persistence\LevelDB\**" />
+    <None Remove="IO\Data\LevelDB\**" />
+    <None Remove="Persistence\LevelDB\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="IO\Data\LightDB\Snapshot.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="protocol.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <PackagePath>content</PackagePath>
@@ -49,6 +62,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\lightdb.lib\lightdb.lib.csproj" />
     <ProjectReference Include="..\llvm\llvm.csproj" />
     <ProjectReference Include="..\neo-vm\neo-vm.csproj" />
   </ItemGroup>

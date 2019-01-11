@@ -5,7 +5,7 @@ using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Persistence.LevelDB;
+using Neo.Persistence.LightDB;
 using Neo.Plugins;
 using Neo.Services;
 using Neo.SmartContract;
@@ -29,7 +29,7 @@ namespace Neo.Shell
     {
         private const string PeerStatePath = "peers.dat";
 
-        private LevelDBStore store;
+        private LightDBStore store;
         private NeoSystem system;
         private WalletIndexer indexer;
 
@@ -874,7 +874,7 @@ namespace Neo.Shell
                         useRPC = true;
                         break;
                 }
-            store = new LevelDBStore(
+            store = new LightDBStore(
                 Path.GetFullPath(Settings.Default.Paths.Chain),
                 Path.GetFullPath(Settings.Default.Paths.DumpInfos),
                 Settings.Default.Paths.DumpOnlyLocal,

@@ -1,20 +1,22 @@
 ﻿using Akka.Actor;
 using Neo.IO;
-using Neo.IO.Data.LevelDB;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.VM;
 using System;
 using System.Linq;
-using Neo;
+using LTLightDB = LightDB.LightDB;
+using LTWriteTask = LightDB.WriteTask;
+using LTDBValue = LightDB.DBValue;
+using Neo.Persistence.LightDB;
 
 namespace Neo.Plugins
 {
     internal class Logger : UntypedActor
     {
-        private readonly DB db;
+        private readonly LTLightDB db;
 
-        public Logger(IActorRef blockchain, DB db)
+        public Logger(IActorRef blockchain, LTLightDB db)
         {
             this.db = db;
             blockchain.Tell(new Blockchain.Register());
@@ -76,12 +78,14 @@ namespace Neo.Plugins
                 }
                 else
                 {
-                    db.Put(WriteOptions.Default, e.Transaction.Hash.ToArray(), json.ToString());
+                    LTWriteTask writetask = db.CreateWriteTask();
+                    writetask.Put(new byte[] { Prefixes.DATA_ApplicationLog }, e.Transaction.Hash.ToArray(),LTDBValue.FromValue(LTDBValue.Type.String, json.ToString()));
+                    db.Write(writetask);
                 }
             }
         }
 
-        public static Props Props(IActorRef blockchain, DB db)
+        public static Props Props(IActorRef blockchain, LTLightDB db)
         {
             return Akka.Actor.Props.Create(() => new Logger(blockchain, db));
         }
