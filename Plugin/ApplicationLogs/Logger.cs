@@ -65,7 +65,7 @@ namespace Neo.Plugins
                     //增加applicationLog输入到数据库
                     MongoHelper.InsetOne(Settings.Default.Conn, Settings.Default.Db, Settings.Default.Coll, MongoDB.Bson.BsonDocument.Parse(json.ToString()));
 
-                    if (e.IsLastTransaction)
+                    if (e.IsLastInvocationTransaction)
                     {
                         var blockindex = (int)e.BlockIndex;
                         json = new JObject();

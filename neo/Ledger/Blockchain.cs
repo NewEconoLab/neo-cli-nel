@@ -25,7 +25,7 @@ namespace Neo.Ledger
     public sealed class Blockchain : UntypedActor
     {
         public class Register { }
-        public class ApplicationExecuted { public Transaction Transaction; public ApplicationExecutionResult[] ExecutionResults; public uint BlockIndex; public bool IsLastTransaction = false; }
+        public class ApplicationExecuted { public Transaction Transaction; public ApplicationExecutionResult[] ExecutionResults; public uint BlockIndex; public bool IsLastInvocationTransaction = false; }
         public class PersistCompleted { public Block Block; }
         public class Import { public IEnumerable<Block> Blocks; }
         public class ImportCompleted { }
@@ -464,7 +464,17 @@ namespace Neo.Ledger
                     SystemFeeAmount = snapshot.GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.SystemFee),
                     TrimmedBlock = block.Trim()
                 });
-                Transaction lastTransaction = block.Transactions.Last();
+                //获得最后一个调用合约的交易是什么
+                Transaction lastInvocationTransaction = null;
+                for (var i = 0; i < block.Transactions.Length; i++)
+                {
+                    var tran = block.Transactions[block.Transactions.Length -1 - i];
+                    if (tran.Type == TransactionType.InvocationTransaction)
+                    {
+                        lastInvocationTransaction = tran;
+                        break;
+                    }
+                }
                 foreach (Transaction tx in block.Transactions)
                 {
                     snapshot.Transactions.Add(tx.Hash, new TransactionState
@@ -648,7 +658,7 @@ namespace Neo.Ledger
                             Transaction = tx,
                             ExecutionResults = execution_results.ToArray(),
                             BlockIndex = block.Index,
-                            IsLastTransaction = tx.Hash == lastTransaction.Hash
+                            IsLastInvocationTransaction = lastInvocationTransaction ==null?false: tx.Hash == lastInvocationTransaction.Hash
                         });
                 }
                 snapshot.BlockHashIndex.GetAndChange().Hash = block.Hash;
