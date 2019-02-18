@@ -1,22 +1,20 @@
 ﻿using Akka.Actor;
 using Neo.IO;
+using Neo.IO.Data.LevelDB;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.VM;
 using System;
 using System.Linq;
-using LTLightDB = LightDB.LightDB;
-using LTWriteTask = LightDB.WriteTask;
-using LTDBValue = LightDB.DBValue;
-using Neo.Persistence.LightDB;
+using Neo;
 
 namespace Neo.Plugins
 {
     internal class Logger : UntypedActor
     {
-        private readonly LTLightDB db;
+        private readonly DB db;
 
-        public Logger(IActorRef blockchain, LTLightDB db)
+        public Logger(IActorRef blockchain, DB db)
         {
             this.db = db;
             blockchain.Tell(new Blockchain.Register());
@@ -65,7 +63,7 @@ namespace Neo.Plugins
                     //增加applicationLog输入到数据库
                     MongoHelper.InsetOne(Settings.Default.Conn, Settings.Default.Db, Settings.Default.Coll, MongoDB.Bson.BsonDocument.Parse(json.ToString()));
 
-                    if (e.IsLastTransaction)
+                    if (e.IsLastInvocationTransaction)
                     {
                         var blockindex = (int)e.BlockIndex;
                         json = new JObject();
@@ -78,14 +76,12 @@ namespace Neo.Plugins
                 }
                 else
                 {
-                    LTWriteTask writetask = db.CreateWriteTask();
-                    writetask.Put(new byte[] { Prefixes.DATA_ApplicationLog }, e.Transaction.Hash.ToArray(),LTDBValue.FromValue(LTDBValue.Type.String, json.ToString()));
-                    db.Write(writetask);
+                    db.Put(WriteOptions.Default, e.Transaction.Hash.ToArray(), json.ToString());
                 }
             }
         }
 
-        public static Props Props(IActorRef blockchain, LTLightDB db)
+        public static Props Props(IActorRef blockchain, DB db)
         {
             return Akka.Actor.Props.Create(() => new Logger(blockchain, db));
         }

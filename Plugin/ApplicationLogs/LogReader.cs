@@ -1,24 +1,20 @@
-﻿using LTLightDB = LightDB.LightDB;
-using LTDBValue = LightDB.DBValue;
-using LTSnapShot = LightDB.ISnapShot;
-using Neo.Persistence.LightDB;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
+using Neo.IO.Data.LevelDB;
 using Neo.IO.Json;
 using Neo.Network.RPC;
 using System.IO;
-using Neo.IO.Data.LightDB;
 
 namespace Neo.Plugins
 {
     public class LogReader : Plugin, IRpcPlugin
     {
-        private readonly LTLightDB db;
+        private readonly DB db;
 
         public override string Name => "ApplicationLogs";
 
         public LogReader()
         {
-            db = DB.Open(Path.GetFullPath(Settings.Default.Path), new Options { CreateIfMissing = true });
+            this.db = DB.Open(Path.GetFullPath(Settings.Default.Path), new Options { CreateIfMissing = true });
             System.ActorSystem.ActorOf(Logger.Props(System.Blockchain, db));
         }
 
@@ -26,11 +22,9 @@ namespace Neo.Plugins
         {
             if (method != "getapplicationlog") return null;
             UInt256 hash = UInt256.Parse(_params[0].AsString());
-            LTSnapShot snapShot = db.UseSnapShot();
-            LTDBValue lTDBValue =  snapShot.GetValue(new byte[] { Prefixes.DATA_ApplicationLog}, hash.ToArray());
-            if (lTDBValue==null)
+            if (!db.TryGet(ReadOptions.Default, hash.ToArray(), out Slice value))
                 throw new RpcException(-100, "Unknown transaction");
-            return JObject.Parse((string)lTDBValue.typedvalue);
+            return JObject.Parse(value.ToString());
         }
 
         public override void Configure()

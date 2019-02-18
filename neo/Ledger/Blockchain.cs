@@ -25,7 +25,7 @@ namespace Neo.Ledger
     public sealed class Blockchain : UntypedActor
     {
         public class Register { }
-        public class ApplicationExecuted { public Transaction Transaction; public ApplicationExecutionResult[] ExecutionResults; public uint BlockIndex; public bool IsLastTransaction = false; }
+        public class ApplicationExecuted { public Transaction Transaction; public ApplicationExecutionResult[] ExecutionResults; public uint BlockIndex; public bool IsLastInvocationTransaction = false; }
         public class PersistCompleted { public Block Block; }
         public class Import { public IEnumerable<Block> Blocks; }
         public class ImportCompleted { }
@@ -464,7 +464,16 @@ namespace Neo.Ledger
                     SystemFeeAmount = snapshot.GetSysFeeAmount(block.PrevHash) + (long)block.Transactions.Sum(p => p.SystemFee),
                     TrimmedBlock = block.Trim()
                 });
-                Transaction lastTransaction = block.Transactions.Last();
+                Transaction lastInvocationTransaction = null;
+                for (var i = 0; i < block.Transactions.Length; i++)
+                {
+                    var tran = block.Transactions[block.Transactions.Length - 1 - i];
+                    if (tran.Type == TransactionType.InvocationTransaction)
+                    {
+                        lastInvocationTransaction = tran;
+                        break;
+                    }
+                }
                 foreach (Transaction tx in block.Transactions)
                 {
                     snapshot.Transactions.Add(tx.Hash, new TransactionState
@@ -589,15 +598,15 @@ namespace Neo.Ledger
                             break;
 #pragma warning restore CS0612
                         case InvocationTransaction tx_invocation:
-                            var clone = snapshot.Clone();
-                            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, clone, tx_invocation.Gas))
+                            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, snapshot.Clone(), tx_invocation.Gas))
                             {
+
                                 ///add log
                                 bool bLog = false;
-                                if (!(this.Store as Neo.Persistence.LightDB.LightDBStore).dumpInfo_onlylocal)
+                                if (!(this.Store as Neo.Persistence.LevelDB.LevelDBStore).dumpInfo_onlylocal)
                                 {
-                                    var split = block.Header.Index % (this.Store as Neo.Persistence.LightDB.LightDBStore).dumpInfo_splitcount;
-                                    if (SmartContract.Debug.DumpInfo.Path != null && split == (this.Store as Neo.Persistence.LightDB.LightDBStore).dumpInfo_splitindex)// && this.FullLogSkip.Contains(itx.Hash.ToString()) == false)
+                                    var split = block.Header.Index % (this.Store as Neo.Persistence.LevelDB.LevelDBStore).dumpInfo_splitcount;
+                                    if (SmartContract.Debug.DumpInfo.Path != null && split == (this.Store as Neo.Persistence.LevelDB.LevelDBStore).dumpInfo_splitindex)// && this.FullLogSkip.Contains(itx.Hash.ToString()) == false)
                                         bLog = true;
                                 }
                                 if (bLog == false)
@@ -648,7 +657,7 @@ namespace Neo.Ledger
                             Transaction = tx,
                             ExecutionResults = execution_results.ToArray(),
                             BlockIndex = block.Index,
-                            IsLastTransaction = tx.Hash == lastTransaction.Hash
+                            IsLastInvocationTransaction = lastInvocationTransaction == null ? false : tx.Hash == lastInvocationTransaction.Hash
                         });
                 }
                 snapshot.BlockHashIndex.GetAndChange().Hash = block.Hash;

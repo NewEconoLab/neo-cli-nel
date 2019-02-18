@@ -1,5 +1,5 @@
 ﻿using Neo.IO;
-using Neo.IO.Data.LightDB;
+using Neo.IO.Data.LevelDB;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -10,10 +10,6 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Threading;
-using TableIterator = LightDB.TableIterator;
-
-
-
 
 namespace Neo.Wallets
 {
@@ -50,7 +46,7 @@ namespace Neo.Wallets
             if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.SYS_Version), out Slice value) && Version.TryParse(value.ToString(), out Version version) && version >= Version.Parse("2.5.4"))
             {
                 ReadOptions options = new ReadOptions { FillCache = false };
-                foreach (var group in db.Find(db.UseSnapShot(), SliceBuilder.Begin(DataEntryPrefix.IX_Group), (k, v) => new
+                foreach (var group in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.IX_Group), (k, v) => new
                 {
                     Height = k.ToUInt32(1),
                     Id = v.ToArray()
@@ -61,7 +57,7 @@ namespace Neo.Wallets
                     foreach (UInt160 account in accounts)
                         accounts_tracked.Add(account, new HashSet<CoinReference>());
                 }
-                foreach (Coin coin in db.Find(db.UseSnapShot(), SliceBuilder.Begin(DataEntryPrefix.ST_Coin), (k, v) => new Coin
+                foreach (Coin coin in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.ST_Coin), (k, v) => new Coin
                 {
                     Reference = k.ToArray().Skip(1).ToArray().AsSerializable<CoinReference>(),
                     Output = v.ToArray().AsSerializable<TransactionOutput>(),
@@ -76,12 +72,11 @@ namespace Neo.Wallets
             {
                 WriteBatch batch = new WriteBatch();
                 ReadOptions options = new ReadOptions { FillCache = false };
+                using (Iterator it = db.NewIterator(options))
                 {
-                    TableIterator it = db.UseSnapShot().CreateKeyIterator(new byte[] { }) as TableIterator;
-                    it.SeekToFirst();
-                    while (it.Next())
+                    for (it.SeekToFirst(); it.Valid(); it.Next())
                     {
-                        batch.Delete(it.Current);
+                        batch.Delete(it.Key());
                     }
                 }
                 batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_Version), Assembly.GetExecutingAssembly().GetName().Version.ToString());
@@ -127,7 +122,7 @@ namespace Neo.Wallets
             ReadOptions options = new ReadOptions { FillCache = false };
             IEnumerable<UInt256> results = Enumerable.Empty<UInt256>();
             foreach (UInt160 account in accounts)
-                results = results.Union(db.Find(db.UseSnapShot(), SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account), (k, v) => new UInt256(k.ToArray().Skip(21).ToArray())));
+                results = results.Union(db.Find(options, SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account), (k, v) => new UInt256(k.ToArray().Skip(21).ToArray())));
             foreach (UInt256 hash in results)
                 yield return hash;
         }
@@ -296,7 +291,7 @@ namespace Neo.Wallets
                 foreach (CoinReference reference in coins_tracked.Keys)
                     batch.Delete(DataEntryPrefix.ST_Coin, reference);
                 coins_tracked.Clear();
-                foreach (Slice key in db.Find(db.UseSnapShot(), SliceBuilder.Begin(DataEntryPrefix.ST_Transaction), (k, v) => k))
+                foreach (Slice key in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.ST_Transaction), (k, v) => k))
                     batch.Delete(key);
                 db.Write(WriteOptions.Default, batch);
             }
@@ -369,7 +364,7 @@ namespace Neo.Wallets
                             batch.Delete(DataEntryPrefix.ST_Coin, reference);
                             coins_tracked.Remove(reference);
                         }
-                        foreach (Slice key in db.Find(db.UseSnapShot(), SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account), (k, v) => k))
+                        foreach (Slice key in db.Find(options, SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account), (k, v) => k))
                             batch.Delete(key);
                     }
                 }

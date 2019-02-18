@@ -66,7 +66,6 @@ namespace Neo.IO.Caching
                 switch (trackable.State)
                 {
                     case TrackState.Added:
-                        var dic = dictionary;
                         AddInternal(trackable.Key, trackable.Item);
                         break;
                     case TrackState.Changed:
