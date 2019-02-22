@@ -33,10 +33,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="IO\Data\LightDB\Snapshot.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="protocol.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <PackagePath>content</PackagePath>
@@ -62,9 +58,26 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\lightdb.lib\lightdb.lib.csproj" />
     <ProjectReference Include="..\llvm\llvm.csproj" />
     <ProjectReference Include="..\neo-vm\neo-vm.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="NEL.Common">
+      <HintPath>..\dll\NEL.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="NEL.Peer.Pipeline">
+      <HintPath>..\dll\NEL.Peer.Pipeline.dll</HintPath>
+    </Reference>
+    <Reference Include="NEL.Peer.Tcp.Interface">
+      <HintPath>..\dll\NEL.Peer.Tcp.Interface.dll</HintPath>
+    </Reference>
+    <Reference Include="NEL.Peer.Tcp.PeerV2">
+      <HintPath>..\dll\NEL.Peer.Tcp.PeerV2.dll</HintPath>
+    </Reference>
+    <Reference Include="NEL.Simple.SDK">
+      <HintPath>..\dll\NEL.Simple.SDK.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

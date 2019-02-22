@@ -3,7 +3,6 @@ using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using LTDBValue = LightDB.DBValue;
 
 
 namespace Neo.IO.Data.LightDB
@@ -16,11 +15,6 @@ namespace Neo.IO.Data.LightDB
         {
             buffer = new byte[(int)length];
             Marshal.Copy(data, buffer, 0, (int)length);
-        }
-
-        internal Slice(LTDBValue value)
-        {
-            buffer = value.value;
         }
 
         internal Slice(byte[] data)

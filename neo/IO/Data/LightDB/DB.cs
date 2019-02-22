@@ -1,62 +1,44 @@
-﻿using LTLightDB = LightDB.LightDB;
-using LTDBCreateOption = LightDB.DBCreateOption;
-using LTDBValue = LightDB.DBValue;
-using LTISnapshot = LightDB.ISnapShot;
-using LTSnapshot = LightDB.SnapShot;
+﻿using NEL.Common;
+using NEL.Peer.Tcp;
+using NEL.Pipeline;
+using NEL.Simple.SDK;
+using System.Threading.Tasks;
+using System;
 
 namespace Neo.IO.Data.LightDB
 {
-    public class DB:LTLightDB
+    public class DB
     {
         byte[] tableId = new byte[] { };
 
-        public static DB Open(string name)
+        public static DataCache<string, byte[]> dataCache = new DataCache<string, byte[]>();
+
+        private IModulePipeline actor;
+
+        public void Open(string address,string port,string path)
         {
-            return Open(name,Options.Default);
+            var logger = new Logger();
+            var systemC = PipelineSystem.CreatePipelineSystemV1(logger);
+            systemC.RegistModule("neo-cli-nel", new DBModule(address, port, path));
+            systemC.OpenNetwork(new PeerOption());
+            systemC.Start();
+            actor = systemC.GetPipeline(null, "this/neo-cli-nel");
         }
 
-        public static DB Open(string name, Options options)
+        public async Task<WriteBatch> CreateWriteBatch()
         {
-            DB db = new DB();
-            db.Open(name, new LTDBCreateOption() { MagicStr = "" });
-            return db;
+            var writeBatch = new WriteBatch(actor);
+            await writeBatch.CreateWriteBatch();
+            return writeBatch;
         }
 
-        public bool TryGet(ReadOptions options, Slice key, out Slice value)
+        public async Task<Snapshot> CreatSnapshot()
         {
-            var snapshot = UseSnapShot();
-            if (snapshot.TryGetValue(tableId, key.buffer, out LTDBValue dBValue))
-            {
-                value = new Slice(dBValue);
-                return true;
-            }
-            else
-            {
-                value = default(Slice);
-                return false;
-            }
-        }
-
-        public Slice Get(ReadOptions options, Slice key)
-        {
-            var snapshot = UseSnapShot();
-            var dbvalue = snapshot.GetValue(tableId,key.buffer);
-            try
-            {
-                if (dbvalue == null||dbvalue.value.Length == 0)
-                    throw new LightDBException("not found");
-                return new Slice(dbvalue);
-            }
-            finally
-            {
-
-            }
+            var snapshot = new Snapshot(actor);
+            await snapshot.CreatSnapshot();
+            return snapshot;
         }
 
 
-        public void Write(WriteOptions options, WriteBatch write_batch)
-        {
-            base.Write(write_batch);
-        }
     }
 }

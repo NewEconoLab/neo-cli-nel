@@ -1,7 +1,4 @@
-﻿using LTWriteTask = LightDB.WriteTask;
-using LTDBValue = LightDB.DBValue;
-using LTISnapshot = LightDB.ISnapShot;
-using Neo.IO;
+﻿using Neo.IO;
 using Neo.IO.Caching;
 using System;
 using System.Collections.Generic;
@@ -15,17 +12,17 @@ namespace Neo.Persistence.LightDB
         where TValue : class, ICloneable<TValue>, ISerializable, new()
     {
         private readonly DB db;
-        private LTISnapshot snapshot;
-        private readonly ReadOptions options;
-        private readonly LTWriteTask batch;
+        private string snapshotid;
+        private readonly string batchid;
         private readonly byte prefix;
 
-        public DbCache(DB db, LTISnapshot _snapshot, LTWriteTask batch, byte prefix)
+        public DbCache(DB db, string _snapshotid, string batchid, byte prefix)
         {
             this.db = db;
-            snapshot = _snapshot ?? db.UseSnapShot();
-            this.options = options ?? ReadOptions.Default;
-            this.batch = batch;
+            snapshotid = _snapshotid;
+            if (snapshotid == null)
+                snapshotid = await db.CreatSnapshot();
+            this.batchid = batchid;
             this.prefix = prefix;
         }
 

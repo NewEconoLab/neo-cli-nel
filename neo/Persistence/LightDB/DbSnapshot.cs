@@ -1,8 +1,4 @@
-﻿using LTWriteTask = LightDB.WriteTask;
-using LTDBValue = LightDB.DBValue;
-using LTTableInfo = LightDB.TableInfo;
-using LTISnapshot = LightDB.ISnapShot;
-using Neo.IO.Caching;
+﻿using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Cryptography.ECC;
 using Neo.IO.Wrappers;
@@ -13,8 +9,8 @@ namespace Neo.Persistence.LightDB
     class DbSnapshot : Snapshot
     {
         private readonly DB db;
-        private readonly LTWriteTask batch;
-        private readonly LTISnapshot snapshot;
+        private readonly string batchid;
+        private readonly string snapshotid;
 
         public override DataCache<UInt256, BlockState> Blocks { get; }
         public override DataCache<UInt256, TransactionState> Transactions { get; }
@@ -30,24 +26,22 @@ namespace Neo.Persistence.LightDB
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
 
-        public DbSnapshot(DB db)
+        public DbSnapshot(DB db,string snapshotid,string batchid)
         {
             this.db = db;
-            this.snapshot = db.UseSnapShot();
-            this.batch = db.CreateWriteTask();
-            Blocks = new DbCache<UInt256, BlockState>(db, snapshot, batch, Prefixes.DATA_Block);
-            Transactions = new DbCache<UInt256, TransactionState>(db, snapshot, batch, Prefixes.DATA_Transaction);
-            Accounts = new DbCache<UInt160, AccountState>(db, snapshot, batch, Prefixes.ST_Account);
-            UnspentCoins = new DbCache<UInt256, UnspentCoinState>(db, snapshot, batch, Prefixes.ST_Coin);
-            SpentCoins = new DbCache<UInt256, SpentCoinState>(db, snapshot, batch, Prefixes.ST_SpentCoin);
-            Validators = new DbCache<ECPoint, ValidatorState>(db, snapshot, batch, Prefixes.ST_Validator);
-            Assets = new DbCache<UInt256, AssetState>(db, snapshot, batch, Prefixes.ST_Asset);
-            Contracts = new DbCache<UInt160, ContractState>(db, snapshot, batch, Prefixes.ST_Contract);
-            Storages = new DbCache<StorageKey, StorageItem>(db, snapshot, batch, Prefixes.ST_Storage);
-            HeaderHashList = new DbCache<UInt32Wrapper, HeaderHashList>(db, snapshot, batch, Prefixes.IX_HeaderHashList);
-            ValidatorsCount = new DbMetaDataCache<ValidatorsCountState>(db, snapshot, batch, Prefixes.IX_ValidatorsCount);
-            BlockHashIndex = new DbMetaDataCache<HashIndexState>(db, snapshot, batch, Prefixes.IX_CurrentBlock);
-            HeaderHashIndex = new DbMetaDataCache<HashIndexState>(db, snapshot, batch, Prefixes.IX_CurrentHeader);
+            Blocks = new DbCache<UInt256, BlockState>(db, snapshotid, batchid, Prefixes.DATA_Block);
+            Transactions = new DbCache<UInt256, TransactionState>(db, snapshotid, batchid, Prefixes.DATA_Transaction);
+            Accounts = new DbCache<UInt160, AccountState>(db, snapshotid, batchid, Prefixes.ST_Account);
+            UnspentCoins = new DbCache<UInt256, UnspentCoinState>(db, snapshotid, batchid, Prefixes.ST_Coin);
+            SpentCoins = new DbCache<UInt256, SpentCoinState>(db, snapshotid, batchid, Prefixes.ST_SpentCoin);
+            Validators = new DbCache<ECPoint, ValidatorState>(db, snapshotid, batchid, Prefixes.ST_Validator);
+            Assets = new DbCache<UInt256, AssetState>(db, snapshotid, batchid, Prefixes.ST_Asset);
+            Contracts = new DbCache<UInt160, ContractState>(db, snapshotid, batchid, Prefixes.ST_Contract);
+            Storages = new DbCache<StorageKey, StorageItem>(db, snapshotid, batchid, Prefixes.ST_Storage);
+            HeaderHashList = new DbCache<UInt32Wrapper, HeaderHashList>(db, snapshotid, batchid, Prefixes.IX_HeaderHashList);
+            ValidatorsCount = new DbMetaDataCache<ValidatorsCountState>(db, snapshotid, batchid, Prefixes.IX_ValidatorsCount);
+            BlockHashIndex = new DbMetaDataCache<HashIndexState>(db, snapshotid, batchid, Prefixes.IX_CurrentBlock);
+            HeaderHashIndex = new DbMetaDataCache<HashIndexState>(db, snapshotid, batchid, Prefixes.IX_CurrentHeader);
         }
 
         public void reset(string version)

@@ -6,26 +6,35 @@ using Neo.Cryptography.ECC;
 using Neo.IO.Wrappers;
 using Neo.IO.Data.LightDB;
 using Neo.Wallets;
-using TableIterator = LightDB.TableIterator;
-
+using System.Threading.Tasks;
+using NEL.Common;
+using NEL.Pipeline;
+using NEL.Peer.Tcp;
 
 namespace Neo.Persistence.LightDB
 {
     public class LightDBStore : Store, IDisposable
     {
-        private readonly DB db;
+        private DB db;
+
+        private string serverAddress;
+        private string serverPort;
+        private string serverPath;
 
         public int dumpInfo_splitcount;
         public int dumpInfo_splitindex;
         public bool dumpInfo_onlylocal = false;
 
-        public LightDBStore(string path, string dumpInfoPath = null, bool _dumpOnlyLocal = false, int _dumpInfo_splitcount = 1, int _dumpInfo_splitindex = 0)
+        public LightDBStore(string address,string port,string path, string dumpInfoPath = null, bool _dumpOnlyLocal = false, int _dumpInfo_splitcount = 1, int _dumpInfo_splitindex = 0)
         {
             //设置dumpinfo的一些参数
             SmartContract.Debug.DumpInfo.Path = dumpInfoPath;
             this.dumpInfo_onlylocal = _dumpOnlyLocal;
             this.dumpInfo_splitcount = _dumpInfo_splitcount;
             this.dumpInfo_splitindex = _dumpInfo_splitindex;
+            this.serverAddress = address;
+            this.serverPort = port;
+            this.serverPath = path;
 
             if (string.IsNullOrEmpty(SmartContract.Debug.DumpInfo.Path) == false)
             {
@@ -37,17 +46,23 @@ namespace Neo.Persistence.LightDB
             {
                 SmartContract.Debug.DumpInfo.Path = null;
             }
+        }
 
-            db = DB.Open(path, new Options { CreateIfMissing = true });
-            if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.SYS_Version), out Slice value) && Version.TryParse(value.ToString(), out Version version) && version >= Version.Parse("2.5.4"))
+        public async Task Init()
+        {
+            db = new DB();
+            db.Open(serverAddress, serverPort, serverPath);
+            var snapshot = await db.CreatSnapshot();
+            Slice value = await snapshot.Get(SliceBuilder.Begin(DataEntryPrefix.SYS_Version));
+            if (value.buffer.Length>0 && Version.TryParse(value.ToString(), out Version version) && version >= Version.Parse("2.5.4"))
                 return;
-            WriteBatch batch = new WriteBatch();
+            WriteBatch batch = await db.CreateWriteBatch();
             {
-                TableIterator it = db.UseSnapShot().CreateKeyIterator(new byte[] { }) as TableIterator;
+                var it = snapshot.CreateIterator();
                 it.SeekToFirst();
                 while (it.Next())
                 {
-                    batch.Delete(it.Current);
+                    await batch.Delete(it.Current);
                 }
             }
             batch.Put(SliceBuilder.Begin(Prefixes.SYS_Version), Assembly.GetExecutingAssembly().GetName().Version.ToString());
