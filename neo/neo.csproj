@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <Copyright>2015-2018 The Neo Project</Copyright>
     <AssemblyTitle>Neo</AssemblyTitle>

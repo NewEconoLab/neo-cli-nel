@@ -1,7 +1,7 @@
 ﻿using NEL.Pipeline;
 using NEL.Simple.SDK;
+using System;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Neo.IO.Data.LightDB
 {
@@ -11,34 +11,41 @@ namespace Neo.IO.Data.LightDB
 
         private IModulePipeline actor;
 
-        private string id;
+        public UInt64 Wbid { get; private set; }
+
+        public int count = 0;
 
         public WriteBatch(IModulePipeline _actor)
         {
             actor = _actor;
-        }
-
-        public async Task CreateWriteBatch()
-        {
             NetMessage netMessage = Protocol_CreateWriteBatch.CreateSendMsg("");
             actor.Tell(netMessage.ToBytes());
-            var bytes = await DB.dataCache.Get(netMessage.Cmd + netMessage.ID);
-            id = Protocol_CreateWriteBatch.PraseRecvMsg(netMessage).ToString();
+            var p = DB.dataCache.Get(netMessage.Cmd + netMessage.ID).Result;
+            Wbid = p.wbid;
         }
 
-
-        public async Task Put(Slice key, Slice value)
+        public bool Put(Slice key, Slice value)
         {
-            NetMessage netMessage = Protocol_Put.CreateSendMsg(id);
+            NetMessage netMessage = Protocol_Put.CreateSendMsg(Wbid, key.buffer, value.buffer, key.buffer.ToHexString()+ Wbid);
             actor.Tell(netMessage.ToBytes());
-            var bytes = await DB.dataCache.Get(netMessage.Cmd + netMessage.ID);
+            var p = DB.dataCache.Get(netMessage.Cmd + netMessage.ID).Result;
+            return p.result;
         }
 
-        public async Task Delete(Slice key)
+        public bool Delete(Slice key)
         {
-            NetMessage netMessage = Protocol_Delete.CreateSendMsg(id);
+            NetMessage netMessage = Protocol_Delete.CreateSendMsg(Wbid, key.buffer, key.buffer.ToHexString()+ Wbid);
             actor.Tell(netMessage.ToBytes());
-            var bytes = await DB.dataCache.Get(netMessage.Cmd+netMessage.ID);
+            var p = DB.dataCache.Get(netMessage.Cmd+netMessage.ID).Result;
+            return p.result;
+        }
+
+        public bool Write()
+        {
+            NetMessage netMessage = Protocol_Write.CreateSendMsg(Wbid, Wbid.ToString());
+            actor.Tell(netMessage.ToBytes());
+            var p = DB.dataCache.Get(netMessage.Cmd+netMessage.ID).Result;
+            return p.result;
         }
     }
 }

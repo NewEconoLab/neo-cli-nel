@@ -1,8 +1,8 @@
 ﻿using NEL.Pipeline;
 using NEL.Simple.SDK;
-using System.Collections.Concurrent;
 using System.IO;
-using System.Threading.Tasks;
+using System;
+using System.Text;
 
 namespace Neo.IO.Data.LightDB
 {
@@ -38,7 +38,10 @@ namespace Neo.IO.Data.LightDB
                 using (MemoryStream ms = new MemoryStream(data))
                 {
                     NetMessage netMsg = NetMessage.Unpack(ms);
-                    DB.dataCache.Add(netMsg.ID,netMsg.Params[0].value);
+                    var e = Encoding.UTF8.GetString(netMsg.Param.error);
+                    if(!string.IsNullOrEmpty(e))
+                        Console.WriteLine(e);
+                    DB.dataCache.Add(netMsg.Cmd + netMsg.ID,netMsg.Param??new Param() { });
                 }
             }
         }

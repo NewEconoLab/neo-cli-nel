@@ -1,9 +1,6 @@
-﻿using LTLightDB = LightDB.LightDB;
-using LTWriteTask = LightDB.WriteTask;
-using LTDBValue = LightDB.DBValue;
-using LTISnapShot = LightDB.ISnapShot;
-using Neo.IO;
+﻿using Neo.IO;
 using Neo.IO.Caching;
+using Neo.IO.Data.LightDB;
 using System;
 
 namespace Neo.Persistence.LightDB
@@ -11,29 +8,28 @@ namespace Neo.Persistence.LightDB
     class DbMetaDataCache<T> : MetaDataCache<T>
         where T : class, ICloneable<T>, ISerializable, new()
     {
-        private readonly LTLightDB db;
-        private readonly LTISnapShot snapshot;
-        private readonly LTWriteTask batch;
+        private readonly DB db;
+        private readonly Neo.IO.Data.LightDB.Snapshot snapshot;
+        private readonly WriteBatch batch;
         private readonly byte prefix;
-        private readonly byte[] defaultTableid = new byte[] { };
 
-        public DbMetaDataCache(LTLightDB db, LTISnapShot snapshot, LTWriteTask batch, byte prefix, Func<T> factory = null)
+        public DbMetaDataCache(DB db, Neo.IO.Data.LightDB.Snapshot snapshot, WriteBatch batch, byte prefix, Func<T> factory = null)
     : base(factory)
         {
             this.db = db;
-            this.snapshot = snapshot ?? db.UseSnapShot();
+            this.snapshot = snapshot ?? db.CreatNewSnapshot();
             this.batch = batch;
             this.prefix = prefix;
         }
 
         protected override void AddInternal(T item)
         {
-            batch?.Put(defaultTableid, new byte[] { prefix }, LTDBValue.FromValue(LTDBValue.Type.Bytes, item.ToArray()));
+            batch?.Put(new byte[] { prefix },item.ToArray());
         }
 
         protected override T TryGetInternal()
         {
-            var val = db.UseSnapShot().GetValue(defaultTableid, new byte[] { prefix })?.value;
+            var val = db.CurSnapshot.GetValue(new byte[] { prefix }).buffer;
             if (val ==null|| val.Length == 0)
             {
                 return null;
@@ -43,7 +39,7 @@ namespace Neo.Persistence.LightDB
 
         protected override void UpdateInternal(T item)
         {
-            batch?.Put(defaultTableid, new byte[] { prefix }, LTDBValue.FromValue(LTDBValue.Type.Bytes, item.ToArray()));
+            batch?.Put(new byte[] { prefix },item.ToArray());
         }
     }
 }

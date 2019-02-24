@@ -1,6 +1,7 @@
-﻿
-using NEL.Pipeline;
+﻿using NEL.Pipeline;
 using NEL.Simple.SDK;
+using System;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Neo.IO.Data.LightDB
@@ -11,40 +12,48 @@ namespace Neo.IO.Data.LightDB
 
         private IModulePipeline actor;
 
-        private string id;
+        public UInt64 Itid { get; private set; }
 
-        public Iterator(IModulePipeline _actor)
+        public Iterator(IModulePipeline _actor, string id,UInt64 snapid, byte[] beginKey = null, byte[] endKey = null)
         {
             actor = _actor;
+            NetMessage netMessage = Protocol_CreateIterator.CreateSendMsg(snapid, beginKey??new byte[] { }, endKey??new byte[] { },id);
+            actor.Tell(netMessage.ToBytes());
+            var p = DB.dataCache.Get(netMessage.Cmd + netMessage.ID).Result;
         }
 
-        public async Task CreateIterator(string snapshotid)
+        public byte[] Current
         {
-            NetMessage netMessage = Protocol_CreateIterator.CreateSendMsg(snapshotid);
-            actor.Tell(netMessage.ToBytes());
-            await DB.dataCache.Get(netMessage.Cmd + netMessage.ID);
-            id = Protocol_UseSnapShot.PraseRecvMsg(netMessage).ToString();
+            get
+            {
+                NetMessage netMessage = Protocol_IteratorCurrent.CreateSendMsg(Itid, Itid.ToString());
+                actor.Tell(netMessage.ToBytes());
+                return DB.dataCache.Get(netMessage.Cmd + netMessage.ID).Result.value;
+            }
         }
 
-        public async Task<byte[]> Current()
+        public bool MoveNext()
         {
-            NetMessage netMessage = Protocol_IteratorCurrent.CreateSendMsg(id);
+            NetMessage netMessage = Protocol_IteratorNext.CreateSendMsg(Itid, Itid.ToString());
             actor.Tell(netMessage.ToBytes());
-            return await DB.dataCache.Get(netMessage.Cmd + netMessage.ID);
+            var p =DB.dataCache.Get(netMessage.Cmd+netMessage.ID).Result;
+            return p.result;
         }
 
-        public async Task MoveToNext()
+        public bool SeekToFirst()
         {
-            NetMessage netMessage = Protocol_IteratorNext.CreateSendMsg(id);
+            NetMessage netMessage = Protocol_IteratorSeekToFirst.CreateSendMsg(Itid, Itid.ToString());
             actor.Tell(netMessage.ToBytes());
-            await DB.dataCache.Get(netMessage.Cmd+netMessage.ID);
+            var p = DB.dataCache.Get(netMessage.Cmd + netMessage.ID).Result;
+            return p.result;
         }
 
-        public async Task Reset()
+        public bool Reset()
         {
-            NetMessage netMessage = Protocol_IteratorReset.CreateSendMsg(id);
+            NetMessage netMessage = Protocol_IteratorReset.CreateSendMsg(Itid, Itid.ToString());
             actor.Tell(netMessage.ToBytes());
-            await DB.dataCache.Get(netMessage.Cmd+ netMessage.ID);
+            var p = DB.dataCache.Get(netMessage.Cmd + netMessage.ID).Result;
+            return p.result;
         }
     }
 }

@@ -33,6 +33,9 @@ namespace Neo
     {
         public string Chain { get; }
         public string Index { get; }
+        public string ServerDBAddress { get; }
+        public string ServerDBPort { get; }
+        public string ServerDBPath { get; }
         public string DumpInfos { get; }
         public bool DumpOnlyLocal { get; }
         public int DumpInfo_splitCount { get; }
@@ -45,6 +48,9 @@ namespace Neo
             //this.Index = string.Format(section.GetSection("Index").Value, Message.Magic.ToString("X8"));
             this.Chain = section.GetSection("Chain").Value;
             this.Index = section.GetSection("Index").Value;
+            this.ServerDBAddress = section.GetSection("ServerDBAddress").Value;
+            this.ServerDBPort = section.GetSection("ServerDBPort").Value;
+            this.ServerDBPath = section.GetSection("ServerDBPath").Value;
             //添加log配置文件
             this.DumpInfos = section.GetSection("DumpInfos").Value;
             var local = section.GetSection("DumpOnlyLocal");

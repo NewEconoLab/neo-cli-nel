@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using LTISnapshot = LightDB.ISnapShot;
-using LTIKeyIterator = LightDB.IKeyIterator;
 
 namespace Neo.IO.Data.LightDB
 {
@@ -13,14 +11,14 @@ namespace Neo.IO.Data.LightDB
             batch.Delete(SliceBuilder.Begin(prefix).Add(key));
         }
 
-        public static IEnumerable<T> Find<T>(this DB db, LTISnapshot snapshot, byte prefix) where T : class, ISerializable, new()
+        public static IEnumerable<T> Find<T>(this DB db, byte prefix) where T : class, ISerializable, new()
         {
-            return Find(db, snapshot, SliceBuilder.Begin(prefix), (k, v) => v.ToArray().AsSerializable<T>());
+            return Find(db, SliceBuilder.Begin(prefix), (k, v) => v.ToArray().AsSerializable<T>());
         }
 
-        public static IEnumerable<T> Find<T>(this DB db, LTISnapshot snapshot, Slice prefix, Func<Slice, Slice, T> resultSelector)
+        public static IEnumerable<T> Find<T>(this DB db, Slice prefix, Func<Slice, Slice, T> resultSelector)
         {
-            LTIKeyIterator it = snapshot.CreateKeyIterator(new byte[] { }, prefix.buffer);
+            var it = db.CurSnapshot.CreateNewIterator(prefix.buffer);
             {
                 while ( it.MoveNext())
                 {
@@ -29,16 +27,16 @@ namespace Neo.IO.Data.LightDB
                     if (key.Length < y.Length) break;
                     if (!key.Take(y.Length).SequenceEqual(y)) break;
 
-                    byte[] value = snapshot.GetValue(new byte[] { },key).value;
+                    Slice value = db.CurSnapshot.GetValue(key);
 
-                    yield return resultSelector(new Slice(key), new Slice(value));
+                    yield return resultSelector(new Slice(key), value);
                 }
             }
         }
 
-        public static T Get<T>(this DB db, ReadOptions options, byte prefix, ISerializable key) where T : class, ISerializable, new()
+        public static T Get<T>(this DB db, byte prefix, ISerializable key) where T : class, ISerializable, new()
         {
-            return db.Get(options, SliceBuilder.Begin(prefix).Add(key)).ToArray().AsSerializable<T>();
+            return db.CurSnapshot.GetValue(SliceBuilder.Begin(prefix).Add(key)).ToArray().AsSerializable<T>();
         }
     }
 }

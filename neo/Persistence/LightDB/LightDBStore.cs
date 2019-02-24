@@ -46,32 +46,30 @@ namespace Neo.Persistence.LightDB
             {
                 SmartContract.Debug.DumpInfo.Path = null;
             }
-        }
 
-        public async Task Init()
-        {
             db = new DB();
             db.Open(serverAddress, serverPort, serverPath);
-            var snapshot = await db.CreatSnapshot();
-            Slice value = await snapshot.Get(SliceBuilder.Begin(DataEntryPrefix.SYS_Version));
-            if (value.buffer.Length>0 && Version.TryParse(value.ToString(), out Version version) && version >= Version.Parse("2.5.4"))
+            var snapshot = db.CurSnapshot;
+            Slice value = snapshot.GetValue(SliceBuilder.Begin(DataEntryPrefix.SYS_Version));
+            if (value.buffer.Length > 0 && Version.TryParse(value.ToString(), out Version version) && version >= Version.Parse("2.5.4"))
                 return;
-            WriteBatch batch = await db.CreateWriteBatch();
+            WriteBatch batch = db.CreateNewWriteBatch();
             {
-                var it = snapshot.CreateIterator();
+                var it = snapshot.CreateNewIterator();
                 it.SeekToFirst();
-                while (it.Next())
+                while (it.MoveNext())
                 {
-                    await batch.Delete(it.Current);
+                    var cur = it.Current;
+                    batch.Delete(cur);
                 }
             }
             batch.Put(SliceBuilder.Begin(Prefixes.SYS_Version), Assembly.GetExecutingAssembly().GetName().Version.ToString());
-            db.Write(WriteOptions.Default, batch);
+            batch.Write();
         }
 
         public void Dispose()
         {
-            db.Dispose();
+            //db.Dispose();
         }
 
         public override DataCache<UInt160, AccountState> GetAccounts()

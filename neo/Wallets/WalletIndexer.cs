@@ -10,8 +10,6 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Threading;
-using TableIterator = LightDB.TableIterator;
-
 
 
 
@@ -42,26 +40,25 @@ namespace Neo.Wallets
             }
         }
 
-        public WalletIndexer(string path)
+        public WalletIndexer(string serverAddress, string serverPort, string serverPath)
         {
-            path = Path.GetFullPath(path);
-            Directory.CreateDirectory(path);
-            db = DB.Open(path, new Options { CreateIfMissing = true });
-            if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.SYS_Version), out Slice value) && Version.TryParse(value.ToString(), out Version version) && version >= Version.Parse("2.5.4"))
+            db = new DB();
+            db.Open(serverAddress, serverPort, serverPath);
+            Slice value = db.CurSnapshot.GetValue(SliceBuilder.Begin(DataEntryPrefix.SYS_Version));
+            if (Version.TryParse(value.ToString(), out Version version) && version >= Version.Parse("2.5.4"))
             {
-                ReadOptions options = new ReadOptions { FillCache = false };
-                foreach (var group in db.Find(db.UseSnapShot(), SliceBuilder.Begin(DataEntryPrefix.IX_Group), (k, v) => new
+                foreach (var group in db.Find(SliceBuilder.Begin(DataEntryPrefix.IX_Group), (k, v) => new
                 {
                     Height = k.ToUInt32(1),
                     Id = v.ToArray()
                 }))
                 {
-                    UInt160[] accounts = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.IX_Accounts).Add(group.Id)).ToArray().AsSerializableArray<UInt160>();
+                    UInt160[] accounts = db.CurSnapshot.GetValue(SliceBuilder.Begin(DataEntryPrefix.IX_Accounts).Add(group.Id)).ToArray().AsSerializableArray<UInt160>();
                     indexes.Add(group.Height, new HashSet<UInt160>(accounts));
                     foreach (UInt160 account in accounts)
                         accounts_tracked.Add(account, new HashSet<CoinReference>());
                 }
-                foreach (Coin coin in db.Find(db.UseSnapShot(), SliceBuilder.Begin(DataEntryPrefix.ST_Coin), (k, v) => new Coin
+                foreach (Coin coin in db.Find(SliceBuilder.Begin(DataEntryPrefix.ST_Coin), (k, v) => new Coin
                 {
                     Reference = k.ToArray().Skip(1).ToArray().AsSerializable<CoinReference>(),
                     Output = v.ToArray().AsSerializable<TransactionOutput>(),
@@ -74,18 +71,17 @@ namespace Neo.Wallets
             }
             else
             {
-                WriteBatch batch = new WriteBatch();
-                ReadOptions options = new ReadOptions { FillCache = false };
+                WriteBatch batch = db.CreateNewWriteBatch();
                 {
-                    TableIterator it = db.UseSnapShot().CreateKeyIterator(new byte[] { }) as TableIterator;
+                    var it = db.CurSnapshot.CreateNewIterator(new byte[] { });
                     it.SeekToFirst();
-                    while (it.Next())
+                    while (it.MoveNext())
                     {
                         batch.Delete(it.Current);
                     }
                 }
                 batch.Put(SliceBuilder.Begin(DataEntryPrefix.SYS_Version), Assembly.GetExecutingAssembly().GetName().Version.ToString());
-                db.Write(WriteOptions.Default, batch);
+                batch.Write();
             }
             thread = new Thread(ProcessBlocks)
             {
@@ -99,7 +95,7 @@ namespace Neo.Wallets
         {
             disposed = true;
             thread.Join();
-            db.Dispose();
+            //db.Dispose();
         }
 
         public IEnumerable<Coin> GetCoins(IEnumerable<UInt160> accounts)
@@ -124,10 +120,9 @@ namespace Neo.Wallets
 
         public IEnumerable<UInt256> GetTransactions(IEnumerable<UInt160> accounts)
         {
-            ReadOptions options = new ReadOptions { FillCache = false };
             IEnumerable<UInt256> results = Enumerable.Empty<UInt256>();
             foreach (UInt160 account in accounts)
-                results = results.Union(db.Find(db.UseSnapShot(), SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account), (k, v) => new UInt256(k.ToArray().Skip(21).ToArray())));
+                results = results.Union(db.Find(SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account), (k, v) => new UInt256(k.ToArray().Skip(21).ToArray())));
             foreach (UInt256 hash in results)
                 yield return hash;
         }
@@ -245,18 +240,17 @@ namespace Neo.Wallets
                         uint height = indexes.Keys.Min();
                         Block block = Blockchain.Singleton.Store.GetBlock(height);
                         if (block == null) break;
-                        WriteBatch batch = new WriteBatch();
+                        WriteBatch batch = db.CreateNewWriteBatch();
                         HashSet<UInt160> accounts = indexes[height];
                         ProcessBlock(block, accounts, batch);
-                        ReadOptions options = ReadOptions.Default;
-                        byte[] groupId = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height)).ToArray();
+                        byte[] groupId = db.CurSnapshot.GetValue(SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height)).ToArray();
                         indexes.Remove(height);
                         batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height));
                         height++;
                         if (indexes.TryGetValue(height, out HashSet<UInt160> accounts_next))
                         {
                             accounts_next.UnionWith(accounts);
-                            groupId = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height)).ToArray();
+                            groupId = db.CurSnapshot.GetValue(SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height)).ToArray();
                             batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Accounts).Add(groupId), accounts_next.ToArray().ToByteArray());
                         }
                         else
@@ -264,7 +258,7 @@ namespace Neo.Wallets
                             indexes.Add(height, accounts);
                             batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height), groupId);
                         }
-                        db.Write(WriteOptions.Default, batch);
+                        batch.Write();
                     }
                 for (int i = 0; i < 20 && !disposed; i++)
                     Thread.Sleep(100);
@@ -275,11 +269,10 @@ namespace Neo.Wallets
         {
             lock (SyncRoot)
             {
-                WriteBatch batch = new WriteBatch();
-                ReadOptions options = new ReadOptions { FillCache = false };
+                WriteBatch batch = db.CreateNewWriteBatch();
                 foreach (uint height in indexes.Keys)
                 {
-                    byte[] groupId = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height)).ToArray();
+                    byte[] groupId = db.CurSnapshot.GetValue(SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height)).ToArray();
                     batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height));
                     batch.Delete(SliceBuilder.Begin(DataEntryPrefix.IX_Accounts).Add(groupId));
                 }
@@ -296,9 +289,9 @@ namespace Neo.Wallets
                 foreach (CoinReference reference in coins_tracked.Keys)
                     batch.Delete(DataEntryPrefix.ST_Coin, reference);
                 coins_tracked.Clear();
-                foreach (Slice key in db.Find(db.UseSnapShot(), SliceBuilder.Begin(DataEntryPrefix.ST_Transaction), (k, v) => k))
+                foreach (Slice key in db.Find(SliceBuilder.Begin(DataEntryPrefix.ST_Transaction), (k, v) => k))
                     batch.Delete(key);
-                db.Write(WriteOptions.Default, batch);
+                batch.Write();
             }
         }
 
@@ -316,7 +309,7 @@ namespace Neo.Wallets
                     }
                 if (index.Count > 0)
                 {
-                    WriteBatch batch = new WriteBatch();
+                    WriteBatch batch = db.CreateNewWriteBatch();
                     byte[] groupId;
                     if (!index_exists)
                     {
@@ -326,10 +319,10 @@ namespace Neo.Wallets
                     }
                     else
                     {
-                        groupId = db.Get(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height)).ToArray();
+                        groupId = db.CurSnapshot.GetValue(SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height)).ToArray();
                     }
                     batch.Put(SliceBuilder.Begin(DataEntryPrefix.IX_Accounts).Add(groupId), index.ToArray().ToByteArray());
-                    db.Write(WriteOptions.Default, batch);
+                    batch.Write();
                 }
             }
         }
@@ -338,8 +331,7 @@ namespace Neo.Wallets
         {
             lock (SyncRoot)
             {
-                WriteBatch batch = new WriteBatch();
-                ReadOptions options = new ReadOptions { FillCache = false };
+                WriteBatch batch = db.CreateNewWriteBatch();
                 foreach (UInt160 account in accounts)
                 {
                     if (accounts_tracked.TryGetValue(account, out HashSet<CoinReference> references))
@@ -349,7 +341,7 @@ namespace Neo.Wallets
                             HashSet<UInt160> index = indexes[height];
                             if (index.Remove(account))
                             {
-                                byte[] groupId = db.Get(options, SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height)).ToArray();
+                                byte[] groupId = db.CurSnapshot.GetValue(SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height)).ToArray();
                                 if (index.Count == 0)
                                 {
                                     indexes.Remove(height);
@@ -369,11 +361,11 @@ namespace Neo.Wallets
                             batch.Delete(DataEntryPrefix.ST_Coin, reference);
                             coins_tracked.Remove(reference);
                         }
-                        foreach (Slice key in db.Find(db.UseSnapShot(), SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account), (k, v) => k))
+                        foreach (Slice key in db.Find(SliceBuilder.Begin(DataEntryPrefix.ST_Transaction).Add(account), (k, v) => k))
                             batch.Delete(key);
                     }
                 }
-                db.Write(WriteOptions.Default, batch);
+                batch.Write();
             }
         }
     }

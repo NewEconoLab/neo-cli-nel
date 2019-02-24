@@ -39,7 +39,7 @@ namespace Neo.Shell
         private WalletIndexer GetIndexer()
         {
             if (indexer is null)
-                indexer = new WalletIndexer(Settings.Default.Paths.Index);
+                indexer = new WalletIndexer(Settings.Default.Paths.ServerDBAddress, Settings.Default.Paths.ServerDBPort, Settings.Default.Paths.ServerDBPath);
             return indexer;
         }
 
@@ -875,7 +875,9 @@ namespace Neo.Shell
                         break;
                 }
             store = new LightDBStore(
-                Path.GetFullPath(Settings.Default.Paths.Chain),
+                Settings.Default.Paths.ServerDBAddress,
+                Settings.Default.Paths.ServerDBPort,
+                Settings.Default.Paths.ServerDBPath,
                 Path.GetFullPath(Settings.Default.Paths.DumpInfos),
                 Settings.Default.Paths.DumpOnlyLocal,
                 Settings.Default.Paths.DumpInfo_splitCount,

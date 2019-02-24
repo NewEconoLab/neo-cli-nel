@@ -2,6 +2,7 @@
 using NEL.Peer.Tcp;
 using NEL.Pipeline;
 using NEL.Simple.SDK;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using System;
 
@@ -11,9 +12,22 @@ namespace Neo.IO.Data.LightDB
     {
         byte[] tableId = new byte[] { };
 
-        public static DataCache<string, byte[]> dataCache = new DataCache<string, byte[]>();
+        public static DataCache<string, Param> dataCache = new DataCache<string, Param>();
+
+        public static ConcurrentDictionary<UInt64, ConcurrentQueue<Snapshot>> snapshotpool = new ConcurrentDictionary<UInt64, ConcurrentQueue<Snapshot>>();
 
         private IModulePipeline actor;
+
+        private Snapshot _curSnapshot;
+        public Snapshot CurSnapshot
+        {
+            get
+            {
+                if (_curSnapshot == null || _curSnapshot.state == false)
+                    return CreatNewSnapshot();
+                return _curSnapshot;
+            }
+        }
 
         public void Open(string address,string port,string path)
         {
@@ -25,20 +39,20 @@ namespace Neo.IO.Data.LightDB
             actor = systemC.GetPipeline(null, "this/neo-cli-nel");
         }
 
-        public async Task<WriteBatch> CreateWriteBatch()
-        {
-            var writeBatch = new WriteBatch(actor);
-            await writeBatch.CreateWriteBatch();
-            return writeBatch;
-        }
-
-        public async Task<Snapshot> CreatSnapshot()
+        public Snapshot CreatNewSnapshot()
         {
             var snapshot = new Snapshot(actor);
-            await snapshot.CreatSnapshot();
+            _curSnapshot = snapshot;
+            if(!snapshotpool.ContainsKey(snapshot.snapid))
+                snapshotpool[snapshot.snapid] = new ConcurrentQueue<Snapshot>();
+            snapshotpool[snapshot.snapid].Enqueue(snapshot);
             return snapshot;
         }
 
-
+        public WriteBatch CreateNewWriteBatch()
+        {
+            var writeBatch = new WriteBatch(actor);
+            return writeBatch;
+        }
     }
 }

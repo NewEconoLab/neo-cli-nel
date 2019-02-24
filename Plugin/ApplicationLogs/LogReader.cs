@@ -1,7 +1,4 @@
-﻿using LTLightDB = LightDB.LightDB;
-using LTDBValue = LightDB.DBValue;
-using LTSnapShot = LightDB.ISnapShot;
-using Neo.Persistence.LightDB;
+﻿using Neo.Persistence.LightDB;
 using Microsoft.AspNetCore.Http;
 using Neo.IO.Json;
 using Neo.Network.RPC;
