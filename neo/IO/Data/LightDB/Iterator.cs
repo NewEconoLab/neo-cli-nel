@@ -17,9 +17,10 @@ namespace Neo.IO.Data.LightDB
         public Iterator(IModulePipeline _actor, string id,UInt64 snapid, byte[] beginKey = null, byte[] endKey = null)
         {
             actor = _actor;
-            NetMessage netMessage = Protocol_CreateIterator.CreateSendMsg(snapid, beginKey??new byte[] { }, endKey??new byte[] { },id);
+            NetMessage netMessage = Protocol_CreateIterator.CreateSendMsg(snapid, beginKey,endKey,id);
             actor.Tell(netMessage.ToBytes());
             var p = DB.dataCache.Get(netMessage.Cmd + netMessage.ID).Result;
+            Itid = p.itid;
         }
 
         public byte[] Current

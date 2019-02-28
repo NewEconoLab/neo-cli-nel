@@ -26,6 +26,7 @@ namespace Neo.IO.Data.LightDB
 
         public bool Put(Slice key, Slice value)
         {
+            Console.WriteLine(key.buffer[0]);
             NetMessage netMessage = Protocol_Put.CreateSendMsg(Wbid, key.buffer, value.buffer, key.buffer.ToHexString()+ Wbid);
             actor.Tell(netMessage.ToBytes());
             var p = DB.dataCache.Get(netMessage.Cmd + netMessage.ID).Result;
