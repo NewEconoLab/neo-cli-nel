@@ -92,6 +92,16 @@ namespace Neo
 
         }
 
+        public static List<T> GetData<T>(string mongodbConnStr, string mongodbDatabase, string coll,string findFliter)
+        {
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+            var collection = database.GetCollection<T>(coll);
+            List<T> query = collection.Find(findFliter).ToList();
+            return query;
+        }
+
+
         public static MyJson.JsonNode_Array GetData(string mongodbConnStr, string mongodbDatabase, string coll, string findFliter)
         {
             var client = new MongoClient(mongodbConnStr);
@@ -200,7 +210,6 @@ namespace Neo
                 if (query.Count() > 0) isSet = true;
                 // do something with the list...
             }
-
             if (!isSet)
             {
                 try
@@ -210,7 +219,6 @@ namespace Neo
                 }
                 catch { }
             }
-
             client = null;
         }
 

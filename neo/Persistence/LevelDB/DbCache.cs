@@ -3,6 +3,7 @@ using Neo.IO.Caching;
 using Neo.IO.Data.LevelDB;
 using System;
 using System.Collections.Generic;
+using NEL.Simple.SDK.Helper;
 
 namespace Neo.Persistence.LevelDB
 {
@@ -52,5 +53,35 @@ namespace Neo.Persistence.LevelDB
         {
             batch?.Put(prefix, key, value);
         }
+
+        public override void Commit(ulong height)
+        {
+            base.Commit();
+            WriteBatchTask wbt;
+            foreach (var i in  this.dictionary.Values)
+            {
+                if (i.State == TrackState.None)
+                    continue;
+                wbt = new WriteBatchTask();
+                wbt.tableid = prefix;
+                wbt.key = new MongoDB.Bson.BsonBinaryData(i.Key.ToArray());
+                wbt.value = new MongoDB.Bson.BsonBinaryData(i.Item.ToArray());
+                wbt.valuehash = new MongoDB.Bson.BsonBinaryData(Cryptography.Crypto.Default.Hash256(i.Item.ToArray()));
+                wbt.state = (byte)i.State;
+                wbt.height = height;
+                MongoDBHelper.InsertOne(Settings.Default.MongoSetting["Conn"], Settings.Default.MongoSetting["DataBase"], "Test", wbt);
+            }
+        }
+    }
+
+    class WriteBatchTask
+    {
+        public MongoDB.Bson.ObjectId _id { get; private set; }
+        public byte tableid;
+        public MongoDB.Bson.BsonBinaryData key;
+        public MongoDB.Bson.BsonBinaryData value;
+        public MongoDB.Bson.BsonBinaryData valuehash;
+        public byte state;
+        public UInt64 height;
     }
 }

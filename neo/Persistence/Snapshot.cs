@@ -125,19 +125,19 @@ namespace Neo.Persistence
             Accounts.DeleteWhere((k, v) => !v.IsFrozen && v.Votes.Length == 0 && v.Balances.All(p => p.Value <= Fixed8.Zero));
             UnspentCoins.DeleteWhere((k, v) => v.Items.All(p => p.HasFlag(CoinState.Spent)));
             SpentCoins.DeleteWhere((k, v) => v.Items.Count == 0);
-            Blocks.Commit();
-            Transactions.Commit();
-            Accounts.Commit();
-            UnspentCoins.Commit();
-            SpentCoins.Commit();
-            Validators.Commit();
-            Assets.Commit();
-            Contracts.Commit();
-            Storages.Commit();
-            HeaderHashList.Commit();
-            ValidatorsCount.Commit();
-            BlockHashIndex.Commit();
-            HeaderHashIndex.Commit();
+            Blocks.Commit(Height);
+            Transactions.Commit(Height);
+            Accounts.Commit(Height);
+            UnspentCoins.Commit(Height);
+            SpentCoins.Commit(Height);
+            Validators.Commit(Height);
+            Assets.Commit(Height);
+            Contracts.Commit(Height);
+            Storages.Commit(Height);
+            HeaderHashList.Commit(Height);
+            ValidatorsCount.Commit(Height);
+            BlockHashIndex.Commit(Height);
+            HeaderHashIndex.Commit(Height);
         }
 
         public virtual void Dispose()

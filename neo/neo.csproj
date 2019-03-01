@@ -24,6 +24,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="MongoHelper.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="protocol.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <PackagePath>content</PackagePath>
@@ -39,7 +43,7 @@
     <PackageReference Include="Microsoft.AspNetCore.WebSockets" Version="2.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.1.1" />
-    <PackageReference Include="MongoDB.Driver" Version="2.7.0" />
+    <PackageReference Include="MongoDB.Driver" Version="2.7.3" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1-beta1" />
     <PackageReference Include="System.Text.Encodings.Web" Version="4.5.0" />
   </ItemGroup>
@@ -51,6 +55,12 @@
   <ItemGroup>
     <ProjectReference Include="..\llvm\llvm.csproj" />
     <ProjectReference Include="..\neo-vm\neo-vm.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="NEL.Simple.SDK">
+      <HintPath>..\dll\NEL.Simple.SDK.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

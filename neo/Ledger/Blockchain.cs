@@ -1,6 +1,7 @@
 ﻿using Akka.Actor;
 using Akka.Configuration;
 using MongoDB.Bson;
+using NEL.Simple.SDK.Helper;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
@@ -638,7 +639,7 @@ namespace Neo.Ledger
                                         MyJson.JsonNode_Object data = new MyJson.JsonNode_Object();
                                         data["txid"] =new MyJson.JsonNode_ValueString(tx.Hash.ToString());
                                         data["dimpInfo"] = new MyJson.JsonNode_ValueString(engine.DumpInfo.SaveToString());
-                                        MongoHelper.InsetOne(Settings.Default.MongoSetting["Conn"], Settings.Default.MongoSetting["DataBase"], Settings.Default.MongoSetting["DumpInfoColl"], MongoDB.Bson.BsonDocument.Parse(data.ToString()));
+                                        MongoDBHelper.InsertOne(Settings.Default.MongoSetting["Conn"], Settings.Default.MongoSetting["DataBase"], Settings.Default.MongoSetting["DumpInfoColl"], BsonDocument.Parse(data.ToString()));
                                     }
                                     else
                                     {
@@ -675,14 +676,14 @@ namespace Neo.Ledger
                 if (!string.IsNullOrEmpty(Settings.Default.MongoSetting["Conn"]) && !string.IsNullOrEmpty(Settings.Default.MongoSetting["DataBase"]) && !string.IsNullOrEmpty(Settings.Default.MongoSetting["Block"]))
                 {
                     //block 存入数据库
-                    MongoHelper.InsetOne(Settings.Default.MongoSetting["Conn"], Settings.Default.MongoSetting["DataBase"], Settings.Default.MongoSetting["Block"], BsonDocument.Parse(block.ToJson().ToString()));
+                    MongoDBHelper.InsertOne(Settings.Default.MongoSetting["Conn"], Settings.Default.MongoSetting["DataBase"], Settings.Default.MongoSetting["Block"],BsonDocument.Parse(block.ToJson().ToString()));
                     //更新systemcounter
                     var json = new JObject();
                     json["counter"] = "block";
                     string whereFliter = json.ToString();
                     json["lastBlockindex"] = block.Index;
                     string replaceFliter = json.ToString();
-                    MongoHelper.ReplaceData(Settings.Default.MongoSetting["Conn"], Settings.Default.MongoSetting["DataBase"], "system_counter", whereFliter, MongoDB.Bson.BsonDocument.Parse(replaceFliter));
+                    MongoDBHelper.ReplaceData(Settings.Default.MongoSetting["Conn"], Settings.Default.MongoSetting["DataBase"], "system_counter",whereFliter, MongoDB.Bson.BsonDocument.Parse(replaceFliter));
                 }
             }
             UpdateCurrentSnapshot();

@@ -1,4 +1,5 @@
-﻿using Neo.IO;
+﻿using NEL.Simple.SDK.Helper;
+using Neo.IO;
 using Neo.IO.Caching;
 using Neo.IO.Data.LevelDB;
 using System;
@@ -37,6 +38,20 @@ namespace Neo.Persistence.LevelDB
         protected override void UpdateInternal(T item)
         {
             batch?.Put(prefix, item.ToArray());
+        }
+
+        public override void Commit(ulong height)
+        {
+            base.Commit();
+            if (State == TrackState.None)
+                return;
+            var wbt = new WriteBatchTask();
+            wbt.tableid = prefix;
+            wbt.key = null;
+            wbt.value = new MongoDB.Bson.BsonBinaryData(Item.ToArray());
+            wbt.state = (byte)State;
+            wbt.height = height;
+            MongoDBHelper.InsertOne(Settings.Default.MongoSetting["Conn"], Settings.Default.MongoSetting["DataBase"], "Test",wbt);
         }
     }
 }

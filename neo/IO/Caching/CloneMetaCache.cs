@@ -11,6 +11,11 @@
             this.innerCache = innerCache;
         }
 
+        public override void Commit(ulong height)
+        {
+            Commit();
+        }
+
         protected override void AddInternal(T item)
         {
         }

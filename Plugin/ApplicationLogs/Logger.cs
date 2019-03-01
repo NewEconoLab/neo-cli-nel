@@ -7,6 +7,8 @@ using Neo.VM;
 using System;
 using System.Linq;
 using Neo;
+using NEL.Simple.SDK.Helper;
+using MongoDB.Bson;
 
 namespace Neo.Plugins
 {
@@ -61,7 +63,7 @@ namespace Neo.Plugins
                 if (!string.IsNullOrEmpty(Settings.Default.Conn) && !string.IsNullOrEmpty(Settings.Default.Db) && !string.IsNullOrEmpty(Settings.Default.Coll))
                 {
                     //增加applicationLog输入到数据库
-                    MongoHelper.InsetOne(Settings.Default.Conn, Settings.Default.Db, Settings.Default.Coll, MongoDB.Bson.BsonDocument.Parse(json.ToString()));
+                    MongoDBHelper.InsertOne(Settings.Default.Conn, Settings.Default.Db, Settings.Default.Coll, BsonDocument.Parse(json.ToString()));
 
                     if (e.IsLastInvocationTransaction)
                     {
@@ -71,7 +73,7 @@ namespace Neo.Plugins
                         string whereFliter = json.ToString();
                         json["lastBlockindex"] = blockindex;
                         string replaceFliter = json.ToString();
-                        MongoHelper.ReplaceData(Settings.Default.Conn, Settings.Default.Db,"system_counter", whereFliter, MongoDB.Bson.BsonDocument.Parse(replaceFliter));
+                        MongoDBHelper.ReplaceData(Settings.Default.Conn,whereFliter, Settings.Default.Db, "system_counter",BsonDocument.Parse(replaceFliter));
                     }
                 }
                 else

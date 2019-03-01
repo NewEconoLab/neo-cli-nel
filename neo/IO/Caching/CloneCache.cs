@@ -44,5 +44,10 @@ namespace Neo.IO.Caching
         {
             innerCache.GetAndChange(key).FromReplica(value);
         }
+
+        public override void Commit(ulong height)
+        {
+            Commit();
+        }
     }
 }

@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
+using MongoDB.Bson;
+using NEL.Simple.SDK.Helper;
 using Neo.Network.P2P.Payloads;
 using Newtonsoft.Json.Linq;
 using System;
@@ -63,7 +65,7 @@ namespace Neo
                 bool isUnique = false;
                 if (indexs[i]["isUnique"] != null)
                     isUnique = (bool)indexs[i]["isUnique"];
-                MongoHelper.SetIndex(this.MongoSetting["Conn"], this.MongoSetting["DataBase"], collName, indexDefinition, indexName, isUnique);
+                MongoDBHelper.CreateIndex(this.MongoSetting["Conn"], this.MongoSetting["DataBase"], collName,indexDefinition, indexName, isUnique);
             }
         }
 
