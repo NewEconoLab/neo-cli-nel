@@ -51,16 +51,26 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../llvm/llvm.csproj" />
-    <ProjectReference Include="../neo-vm/neo-vm.csproj" />
-    <ProjectReference Include="../neo/neo.csproj" />
+    <PackageReference Include="neo-debug" Version="2.9.3" />
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Program.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="config_mainnet.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="config_testnet.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="protocol.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="protocol_mainnet.json">
@@ -70,5 +80,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <ProjectExtensions><VisualStudio><UserProperties config_3mainnet_1json__JSONSchema="http://json.schemastore.org/azure-iot-edge-deployment-1.0" /></VisualStudio></ProjectExtensions>
 
 </Project>

@@ -33,6 +33,7 @@
     "MongoSetting": {
       "Conn": "",
       "DataBase": "",
+      "Task": "",
       "DumpInfoColl": "",
       "Block": ""
     },
