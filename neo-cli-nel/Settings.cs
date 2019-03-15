@@ -10,7 +10,9 @@ namespace Neo
         public PathsSettings Paths { get; }
         public P2PSettings P2P { get; }
         public RPCSettings RPC { get; }
-        public UnlockWalletSettings UnlockWallet { get; set; }
+        public UnlockWalletSettings UnlockWallet { get; }
+        public string PluginURL { get; }
+
 
         public static Settings Default { get; }
 
@@ -26,6 +28,7 @@ namespace Neo
             this.P2P = new P2PSettings(section.GetSection("P2P"));
             this.RPC = new RPCSettings(section.GetSection("RPC"));
             this.UnlockWallet = new UnlockWalletSettings(section.GetSection("UnlockWallet"));
+            this.PluginURL = section.GetSection("PluginURL").Value;
         }
     }
 
@@ -71,11 +74,15 @@ namespace Neo
     {
         public ushort Port { get; }
         public ushort WsPort { get; }
+        public int MinDesiredConnections { get; }
+        public int MaxConnections { get; }
 
         public P2PSettings(IConfigurationSection section)
         {
             this.Port = ushort.Parse(section.GetSection("Port").Value);
             this.WsPort = ushort.Parse(section.GetSection("WsPort").Value);
+            this.MinDesiredConnections = section.GetValue("MinDesiredConnections", Peer.DefaultMinDesiredConnections);
+            this.MaxConnections = section.GetValue("MaxConnections", Peer.DefaultMaxConnections);
         }
     }
 

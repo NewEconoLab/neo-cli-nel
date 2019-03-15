@@ -4,9 +4,9 @@
     <OutputType>Exe</OutputType>
     <Copyright>2016-2017 The Neo Project</Copyright>
     <AssemblyTitle>Neo.CLI</AssemblyTitle>
-    <Version>2.9.3</Version>
+    <Version>2.10.0</Version>
     <Authors>The Neo Project</Authors>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
     <AssemblyName>neo-cli</AssemblyName>
     <OutputType>WinExe</OutputType>
     <PackageId>Neo.CLI</PackageId>
@@ -51,7 +51,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="neo-debug" Version="2.9.3" />
+    <PackageReference Include="neo-debug" Version="2.10.0.1" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="4.5.0" />
   </ItemGroup>
 
   <ItemGroup>

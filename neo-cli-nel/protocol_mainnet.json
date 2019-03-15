@@ -30,17 +30,6 @@
       "seed4.neo.org:10333",
       "seed5.neo.org:10333"
     ],
-    "MongoSetting": {
-      "Conn": "",
-      "DataBase": "",
-      "Task": "",
-      "DumpInfoColl": "",
-      "Block": ""
-    },
-    "MongoDbIndexs": [
-      "{\"collName\": \"dumpinfos\",\"indexs\": [{\"indexName\": \"i_txid_unique\",\"indexDefinition\": {\"txid\": 1},\"isUnique\": true}]}",
-      "{\"collName\": \"block\",\"indexs\": [{\"indexName\": \"i_index_-1_unique\",\"indexDefinition\": {\"index\": -1},\"isUnique\": true}]}"
-    ],
     "SystemFee": {
       "EnrollmentTransaction": 1000,
       "IssueTransaction": 500,
