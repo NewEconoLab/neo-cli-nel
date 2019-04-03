@@ -37,7 +37,7 @@ NEO-CLI-NEL的环境要求以及使用方法和原NEO-CLI一样，这里就不�
  
 ### 节点直接将数据录入mongodb
 #### 简介：
-节点提供了获取block和applicationLog的接口，但是轮询请求获取数据消耗太大且有一定的延迟性。因此通过插件直接录入mongodb。
+节点提供了获取block和applicationLog的接口，但是轮询请求获取数据消耗太大且有一定的延迟性。因此通过插件将数据从节点直接录入mongodb。
 具体可以查阅https://github.com/NewEconoLab/Plugins 工程中的RecordToMongo项目。
 #### 注意项：
 与原版的插件不一样，RecordToMongo这个插件需要放在NEL_Plugins目录下。
