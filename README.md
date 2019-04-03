@@ -49,7 +49,7 @@ NEO-CLI-NEL的环境要求以及使用方法和原NEO-CLI一样，这里就不�
  - 发布RecordToMongo工程
  - 将发布RecordToMongo工程生成的.dll文件以及包含配置文件的文件夹复制到NEL_Plugins文件夹中（此时NEL_Plugins文件夹中应该有RecordToMongo.dll以及一个包含config.json文件的RecordToMongo文件夹）
  - 按需编辑RecordToMongo文件夹下面的config.json文件。
- - 回到neo-cli.dll所在目录，使用dotnet neo.cli 命令启动节点。
+ - 回到neo-cli.dll所在目录，使用dotnet neo-cli.dll 命令启动节点。
     - 如果需要额外的启动项，例如--rpc --log等，使用方法和原版节点一样。
 #### 配置文件介绍
 配置文件内容如下：
