@@ -5,7 +5,7 @@
       "Index": "Index_{0}",
       "DumpInfos": "DumpInfos_{0}",
       "Dump": true,
-      "DumpOnlyLocal": true,
+      "DumpOnlyLocal": false,
       "DumpInfo_splitCount": 1,
       "DumpInfo_splitIndex": 0
     },
