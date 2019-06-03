@@ -1,6 +1,5 @@
 ﻿using Akka.Actor;
 using Neo.Consensus;
-using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
@@ -31,8 +30,6 @@ namespace Neo.Shell
 {
     internal class MainService : ConsoleServiceBase
     {
-        private const string PeerStatePath = "peers.dat";
-
         private LevelDBStore store;
         private NeoSystem system;
         private WalletIndexer indexer;
@@ -134,17 +131,7 @@ namespace Neo.Shell
                 case "tx":
                     payload = Blockchain.Singleton.GetTransaction(UInt256.Parse(args[2]));
                     break;
-                case "alert":
-                case "consensus":
-                case "filteradd":
-                case "filterload":
-                case "headers":
-                case "merkleblock":
-                case "ping":
-                case "pong":
-                case "reject":
-                case "verack":
-                case "version":
+                default:
                     Console.WriteLine($"Command \"{command}\" is not supported.");
                     return true;
             }
@@ -252,8 +239,17 @@ namespace Neo.Shell
                 Console.WriteLine("Engine faulted.");
                 return true;
             }
-
+            if (NoWallet()) return true;
             tx = DecorateInvocationTransaction(tx);
+            if (tx == null)
+            {
+                Console.WriteLine("error: insufficient balance.");
+                return true;
+            }
+            if (ReadUserInput("relay tx(no|yes)") != "yes")
+            {
+                return true;
+            }
             return SignAndSendTx(tx);
         }
 
@@ -483,13 +479,13 @@ namespace Neo.Shell
                 return true;
             }
             string path = args[2];
-            string password = ReadPassword("password");
+            string password = ReadUserInput("password", true);
             if (password.Length == 0)
             {
                 Console.WriteLine("cancelled");
                 return true;
             }
-            string password2 = ReadPassword("password");
+            string password2 = ReadUserInput("password", true);
             if (password != password2)
             {
                 Console.WriteLine("error");
@@ -564,7 +560,7 @@ namespace Neo.Shell
                 scriptHash = args[2].ToScriptHash();
                 path = args[3];
             }
-            string password = ReadPassword("password");
+            string password = ReadUserInput("password", true);
             if (password.Length == 0)
             {
                 Console.WriteLine("cancelled");
@@ -759,7 +755,7 @@ namespace Neo.Shell
 
             if (useChangeAddress)
             {
-                string password = ReadPassword("password");
+                string password = ReadUserInput("password", true);
                 if (password.Length == 0)
                 {
                     Console.WriteLine("cancelled");
@@ -858,7 +854,7 @@ namespace Neo.Shell
                 Console.WriteLine($"File does not exist");
                 return true;
             }
-            string password = ReadPassword("password");
+            string password = ReadUserInput("password", true);
             if (password.Length == 0)
             {
                 Console.WriteLine("cancelled");
@@ -941,7 +937,7 @@ namespace Neo.Shell
                 return true;
             }
             if (NoWallet()) return true;
-            string password = ReadPassword("password");
+            string password = ReadUserInput("password", true);
             if (password.Length == 0)
             {
                 Console.WriteLine("cancelled");
@@ -987,6 +983,20 @@ namespace Neo.Shell
                         }
                     }
                 };
+                ContractParametersContext context = new ContractParametersContext(tx);
+                Program.Wallet.Sign(context);
+                if (context.Completed)
+                {
+                    tx.Witnesses = context.GetWitnesses();
+                    Program.Wallet.ApplyTransaction(tx);
+                    system.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
+                    Console.WriteLine($"TXID: {tx.Hash}");
+                }
+                else
+                {
+                    Console.WriteLine("SignatureContext:");
+                    Console.WriteLine(context.ToString());
+                }
             }
             else
             {
@@ -1024,46 +1034,45 @@ namespace Neo.Shell
                     return true;
                 }
 
-                ContractParametersContext transContext = new ContractParametersContext(tx);
-                Program.Wallet.Sign(transContext);
-                tx.Witnesses = transContext.GetWitnesses();
-
-                if (tx.Size > 1024)
+                ContractParametersContext context = new ContractParametersContext(tx);
+                Program.Wallet.Sign(context);
+                if (context.Completed)
                 {
-                    Fixed8 calFee = Fixed8.FromDecimal(tx.Size * 0.00001m + 0.001m);
-                    if (fee < calFee)
+                    tx.Witnesses = context.GetWitnesses();
+                    if (tx.Size > 1024)
                     {
-                        fee = calFee;
-                        tx = Program.Wallet.MakeTransaction(null, new[]
+                        Fixed8 calFee = Fixed8.FromDecimal(tx.Size * 0.00001m + 0.001m);
+                        if (fee < calFee)
                         {
-                            new TransferOutput
+                            fee = calFee;
+                            tx = Program.Wallet.MakeTransaction(null, new[]
                             {
-                                AssetId = assetId,
-                                Value = amount,
-                                ScriptHash = scriptHash
+                                new TransferOutput
+                                {
+                                    AssetId = assetId,
+                                    Value = amount,
+                                    ScriptHash = scriptHash
+                                }
+                            }, fee: fee);
+                            if (tx == null)
+                            {
+                                Console.WriteLine("Insufficient funds");
+                                return true;
                             }
-                        }, fee: fee);
-                        if (tx == null)
-                        {
-                            Console.WriteLine("Insufficient funds");
-                            return true;
+                            context = new ContractParametersContext(tx);
+                            Program.Wallet.Sign(context);
+                            tx.Witnesses = context.GetWitnesses();
                         }
                     }
+                    Program.Wallet.ApplyTransaction(tx);
+                    system.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
+                    Console.WriteLine($"TXID: {tx.Hash}");
                 }
-            }
-            ContractParametersContext context = new ContractParametersContext(tx);
-            Program.Wallet.Sign(context);
-            if (context.Completed)
-            {
-                tx.Witnesses = context.GetWitnesses();
-                Program.Wallet.ApplyTransaction(tx);
-                system.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
-                Console.WriteLine($"TXID: {tx.Hash}");
-            }
-            else
-            {
-                Console.WriteLine("SignatureContext:");
-                Console.WriteLine(context.ToString());
+                else
+                {
+                    Console.WriteLine("SignatureContext:");
+                    Console.WriteLine(context.ToString());
+                }
             }
             return true;
         }
@@ -1267,18 +1276,30 @@ namespace Neo.Shell
                 Console.WriteLine("error");
                 return true;
             }
+            bool isTemp;
+            string fileName;
             var pluginName = args[1];
-            var address = string.Format(Settings.Default.PluginURL, pluginName, typeof(Plugin).Assembly.GetVersion());
-            var fileName = Path.Combine("Plugins", $"{pluginName}.zip");
-            Directory.CreateDirectory("Plugins");
-            Console.WriteLine($"Downloading from {address}");
-            using (WebClient wc = new WebClient())
+
+            if (!File.Exists(pluginName))
             {
-                wc.DownloadFile(address, fileName);
+                var address = string.Format(Settings.Default.PluginURL, pluginName, typeof(Plugin).Assembly.GetVersion());
+                fileName = Path.Combine(Path.GetTempPath(), $"{pluginName}.zip");
+                isTemp = true;
+
+                Console.WriteLine($"Downloading from {address}");
+                using (WebClient wc = new WebClient())
+                {
+                    wc.DownloadFile(address, fileName);
+                }
+            }
+            else
+            {
+                fileName = pluginName;
+                isTemp = false;
             }
             try
             {
-                ZipFile.ExtractToDirectory(fileName, ".");
+                ZipFile.ExtractToDirectory(fileName, Path.Combine(".", "Plugins", $"{Path.GetFileNameWithoutExtension(fileName)}"));
             }
             catch (IOException)
             {
@@ -1287,7 +1308,10 @@ namespace Neo.Shell
             }
             finally
             {
-                File.Delete(fileName);
+                if (isTemp)
+                {
+                    File.Delete(fileName);
+                }
             }
             Console.WriteLine($"Install successful, please restart neo-cli.");
             return true;
@@ -1325,7 +1349,7 @@ namespace Neo.Shell
                 Console.WriteLine("File does not exist.");
                 return true;
             }
-            string password = ReadPassword("password");
+            string password = ReadUserInput("password", true);
             if (password.Length == 0)
             {
                 Console.WriteLine("cancelled");
