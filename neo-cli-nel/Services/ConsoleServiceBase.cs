@@ -1,12 +1,16 @@
-﻿using System;
+using Neo.VM;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Security;
 using System.ServiceProcess;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Neo.Services
 {
@@ -18,6 +22,11 @@ namespace Neo.Services
         public abstract string ServiceName { get; }
 
         protected bool ShowPrompt { get; set; } = true;
+        public bool ReadingPassword { get; set; } = false;
+
+        private bool _running;
+        private readonly CancellationTokenSource _shutdownTokenSource = new CancellationTokenSource();
+        private readonly CountdownEvent _shutdownAcknowledged = new CountdownEvent(1);
 
         protected virtual bool OnCommand(string[] args)
         {
@@ -39,9 +48,18 @@ namespace Neo.Services
             }
         }
 
-        protected internal abstract void OnStart(string[] args);
+        protected internal virtual void OnStart(string[] args)
+        {
+            // Register sigterm event handler
+            AssemblyLoadContext.Default.Unloading += SigTermEventHandler;
+            // Register sigint event handler
+            Console.CancelKeyPress += CancelHandler;
+        }
 
-        protected internal abstract void OnStop();
+        protected internal virtual void OnStop()
+        {
+            _shutdownAcknowledged.Signal();
+        }
 
         private static string[] ParseCommandLine(string line)
         {
@@ -139,53 +157,70 @@ namespace Neo.Services
             }
         }
 
-        public static string ReadUserInput(string prompt, bool password = false)
+        public string ReadUserInput(string prompt, bool password = false)
         {
             const string t = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
             StringBuilder sb = new StringBuilder();
             ConsoleKeyInfo key;
-            Console.Write(prompt);
-            Console.Write(": ");
 
+            if (!string.IsNullOrEmpty(prompt))
+            {
+                Console.Write(prompt + ": ");
+            }
+
+            if (password) ReadingPassword = true;
+            var prevForeground = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Yellow;
 
-            do
+            if (Console.IsInputRedirected)
             {
-                key = Console.ReadKey(true);
-                if (t.IndexOf(key.KeyChar) != -1)
+                // neo-gui Console require it
+                sb.Append(Console.ReadLine());
+            }
+            else
+            {
+                do
                 {
-                    sb.Append(key.KeyChar);
-                    if (password)
-                    {
-                        Console.Write('*');
-                    }
-                    else
-                    {
-                        Console.Write(key.KeyChar);
-                    }
-                }
-                else if (key.Key == ConsoleKey.Backspace && sb.Length > 0)
-                {
-                    sb.Length--;
-                    Console.Write(key.KeyChar);
-                    Console.Write(' ');
-                    Console.Write(key.KeyChar);
-                }
-            } while (key.Key != ConsoleKey.Enter);
+                    key = Console.ReadKey(true);
 
-            Console.ForegroundColor = ConsoleColor.White;
+                    if (t.IndexOf(key.KeyChar) != -1)
+                    {
+                        sb.Append(key.KeyChar);
+                        if (password)
+                        {
+                            Console.Write('*');
+                        }
+                        else
+                        {
+                            Console.Write(key.KeyChar);
+                        }
+                    }
+                    else if (key.Key == ConsoleKey.Backspace && sb.Length > 0)
+                    {
+                        sb.Length--;
+                        Console.Write("\b \b");
+                    }
+                } while (key.Key != ConsoleKey.Enter);
+            }
+
+            Console.ForegroundColor = prevForeground;
+            if (password) ReadingPassword = false;
             Console.WriteLine();
             return sb.ToString();
         }
 
-        public static SecureString ReadSecureString(string prompt)
+        public SecureString ReadSecureString(string prompt)
         {
             const string t = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
             SecureString securePwd = new SecureString();
             ConsoleKeyInfo key;
-            Console.Write(prompt);
-            Console.Write(": ");
 
+            if (!string.IsNullOrEmpty(prompt))
+            {
+                Console.Write(prompt + ": ");
+            }
+
+            ReadingPassword = true;
             Console.ForegroundColor = ConsoleColor.Yellow;
 
             do
@@ -206,9 +241,30 @@ namespace Neo.Services
             } while (key.Key != ConsoleKey.Enter);
 
             Console.ForegroundColor = ConsoleColor.White;
+            ReadingPassword = false;
             Console.WriteLine();
             securePwd.MakeReadOnly();
             return securePwd;
+        }
+
+        private void TriggerGracefulShutdown()
+        {
+            if (!_running) return;
+            _running = false;
+            _shutdownTokenSource.Cancel();
+            // Wait for us to have triggered shutdown.
+            _shutdownAcknowledged.Wait();
+        }
+
+        private void SigTermEventHandler(AssemblyLoadContext obj)
+        {
+            TriggerGracefulShutdown();
+        }
+
+        private void CancelHandler(object sender, ConsoleCancelEventArgs e)
+        {
+            e.Cancel = true;
+            TriggerGracefulShutdown();
         }
 
         public void Run(string[] args)
@@ -267,18 +323,42 @@ namespace Neo.Services
             }
         }
 
-        private void RunConsole()
+        protected string ReadLine()
         {
-            bool running = true;
+            Task<string> readLineTask = Task.Run(() => Console.ReadLine());
+
+            try
+            {
+                readLineTask.Wait(_shutdownTokenSource.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return null;
+            }
+
+            return readLineTask.Result;
+        }
+
+        public void RunConsole()
+        {
+            _running = true;
             string[] emptyarg = new string[] { "" };
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-                Console.Title = ServiceName;
+                try
+                {
+                    Console.Title = ServiceName;
+                }
+                catch { }
 
             Console.ForegroundColor = ConsoleColor.DarkGreen;
-            Console.WriteLine($"{ServiceName} Version: {Assembly.GetEntryAssembly().GetVersion()}");
+
+            var cliV = Assembly.GetAssembly(typeof(Program)).GetVersion();
+            var neoV = Assembly.GetAssembly(typeof(NeoSystem)).GetVersion();
+            var vmV = Assembly.GetAssembly(typeof(ExecutionEngine)).GetVersion();
+            Console.WriteLine($"{ServiceName} v{cliV}  -  NEO v{neoV}  -  NEO-VM v{vmV}");
             Console.WriteLine();
 
-            while (running)
+            while (_running)
             {
                 if (ShowPrompt)
                 {
@@ -287,7 +367,7 @@ namespace Neo.Services
                 }
 
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                string line = Console.ReadLine()?.Trim();
+                string line = ReadLine()?.Trim();
                 if (line == null) break;
                 Console.ForegroundColor = ConsoleColor.White;
 
@@ -297,15 +377,11 @@ namespace Neo.Services
                     if (args.Length == 0)
                         args = emptyarg;
 
-                    running = OnCommand(args);
+                    _running = OnCommand(args);
                 }
                 catch (Exception ex)
                 {
-#if DEBUG
                     Console.WriteLine($"error: {ex.Message}");
-#else
-                    Console.WriteLine("error");
-#endif
                 }
             }
 

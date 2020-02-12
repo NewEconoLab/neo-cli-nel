@@ -1,16 +1,13 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
-using Neo.SmartContract.Native;
-using System.Net;
 using System.Threading;
 
 namespace Neo
 {
-    internal class Settings
+    public class Settings
     {
-        public PathsSettings Paths { get; }
+        public StorageSettings Storage { get; }
         public P2PSettings P2P { get; }
-        public RPCSettings RPC { get; }
         public UnlockWalletSettings UnlockWallet { get; }
         public string PluginURL { get; }
 
@@ -33,7 +30,7 @@ namespace Neo
             {
                 if (_default == null)
                 {
-                    UpdateDefault(Helper.LoadConfig("config"));
+                    UpdateDefault(Utility.LoadConfig("config"));
                 }
 
                 return _default;
@@ -42,25 +39,24 @@ namespace Neo
 
         public Settings(IConfigurationSection section)
         {
-            this.Paths = new PathsSettings(section.GetSection("Paths"));
+            this.Storage = new StorageSettings(section.GetSection("Storage"));
             this.P2P = new P2PSettings(section.GetSection("P2P"));
-            this.RPC = new RPCSettings(section.GetSection("RPC"));
             this.UnlockWallet = new UnlockWalletSettings(section.GetSection("UnlockWallet"));
             this.PluginURL = section.GetSection("PluginURL").Value;
         }
     }
 
-    internal class PathsSettings
+    public class StorageSettings
     {
-        public string Chain { get; }
+        public string Engine { get; }
 
-        public PathsSettings(IConfigurationSection section)
+        public StorageSettings(IConfigurationSection section)
         {
-            this.Chain = string.Format(section.GetSection("Chain").Value, ProtocolSettings.Default.Magic.ToString("X8"));
+            this.Engine = section.GetSection("Engine").Value;
         }
     }
 
-    internal class P2PSettings
+    public class P2PSettings
     {
         public ushort Port { get; }
         public ushort WsPort { get; }
@@ -75,24 +71,6 @@ namespace Neo
             this.MinDesiredConnections = section.GetValue("MinDesiredConnections", Peer.DefaultMinDesiredConnections);
             this.MaxConnections = section.GetValue("MaxConnections", Peer.DefaultMaxConnections);
             this.MaxConnectionsPerAddress = section.GetValue("MaxConnectionsPerAddress", 3);
-        }
-    }
-
-    internal class RPCSettings
-    {
-        public IPAddress BindAddress { get; }
-        public ushort Port { get; }
-        public string SslCert { get; }
-        public string SslCertPassword { get; }
-        public long MaxGasInvoke { get; }
-
-        public RPCSettings(IConfigurationSection section)
-        {
-            this.BindAddress = IPAddress.Parse(section.GetSection("BindAddress").Value);
-            this.Port = ushort.Parse(section.GetSection("Port").Value);
-            this.SslCert = section.GetSection("SslCert").Value;
-            this.SslCertPassword = section.GetSection("SslCertPassword").Value;
-            this.MaxGasInvoke = (long)BigDecimal.Parse(section.GetValue("MaxGasInvoke", "10"), NativeContract.GAS.Decimals).Value;
         }
     }
 
