@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "neo-cli": {
-      "commandName": "Project",
-      "commandLineArgs": "--rpc"
-    }
-  }
-}
